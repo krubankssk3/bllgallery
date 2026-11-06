@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="th">
+<html lang="th" data-title="แอดมิน">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -14,7 +14,7 @@
   tailwind.config = { theme: { extend: { fontFamily: { sans: ['"Noto Sans Thai"', 'system-ui', 'sans-serif'], display: ['Anuphan', '"Noto Sans Thai"', 'sans-serif'] } } } };
 </script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
-<link rel="stylesheet" href="styles.css?v=7">
+<link rel="stylesheet" href="styles.css?v=8">
 </head>
 <body class="bg-slate-50 text-slate-900 antialiased">
 
@@ -22,10 +22,11 @@
 <div id="login" class="hidden min-h-screen items-center justify-center px-4 py-10">
   <form id="login-form" class="reveal w-full max-w-sm rounded-3xl border border-slate-200 bg-white p-8 shadow-xl shadow-slate-900/5">
     <div class="mb-6 flex flex-col items-center gap-3 text-center">
-      <img src="https://img2.pic.in.th/pic/Logo-7aecb8e321ff2955.png" alt="ตราโรงเรียนบ้านละลม" class="h-16 w-16 rounded-2xl bg-white object-contain p-1 ring-1 ring-slate-200">
+      <img src="https://img2.pic.in.th/pic/Logo-7aecb8e321ff2955.png" alt="ตราโรงเรียน" data-site="logo" class="h-16 w-16 rounded-2xl bg-white object-contain p-1 ring-1 ring-slate-200">
       <div>
         <h1 class="font-display text-xl font-bold">เข้าสู่ระบบแอดมิน</h1>
-        <p class="text-sm text-slate-500">คลังภาพประชาสัมพันธ์ โรงเรียนบ้านละลม</p>
+        <p class="text-sm leading-[1.7] text-slate-500"><span data-site="site_name">คลังภาพประชาสัมพันธ์</span> <span data-site="school">โรงเรียนบ้านละลม</span></p>
+        <p class="mt-1 text-xs text-slate-400" data-clock="short">&nbsp;</p>
       </div>
     </div>
     <label for="lg-user" class="mb-1.5 block text-[13px] font-semibold text-slate-700">ชื่อผู้ใช้</label>
@@ -41,7 +42,7 @@
 <div id="app" class="hidden min-h-screen flex-wrap">
   <aside class="box-border flex min-w-[220px] max-w-full flex-[1_1_240px] flex-col gap-6 bg-slate-900 px-4 py-6 text-slate-200 lg:max-w-[260px]">
     <div class="flex items-center gap-2.5 px-2">
-      <img src="https://img2.pic.in.th/pic/Logo-7aecb8e321ff2955.png" alt="" class="h-9 w-9 rounded-xl bg-white object-contain p-0.5">
+      <img src="https://img2.pic.in.th/pic/Logo-7aecb8e321ff2955.png" alt="" data-site="logo" class="h-9 w-9 rounded-xl bg-white object-contain p-0.5">
       <span class="font-display text-base font-semibold text-white">คลังภาพ · แอดมิน</span>
     </div>
     <nav id="nav" aria-label="เมนูแอดมิน" class="flex flex-row flex-wrap gap-1 lg:flex-col">
@@ -51,6 +52,7 @@
       <a href="#groups" data-view="groups" class="nav-item rounded-[10px] px-3 py-3 text-[15px]">กลุ่ม LINE</a>
       <a href="#users" data-view="users" class="nav-item rounded-[10px] px-3 py-3 text-[15px]">ผู้ใช้และสิทธิ์</a>
       <a href="#settings" data-view="settings" class="nav-item rounded-[10px] px-3 py-3 text-[15px]">ตั้งค่าบอท</a>
+      <a href="#site" data-view="site" class="nav-item rounded-[10px] px-3 py-3 text-[15px]">ข้อมูลโรงเรียน</a>
     </nav>
     <div class="mt-auto flex flex-col gap-1 border-t border-slate-800 pt-4 text-sm">
       <span class="px-3 text-slate-400">เข้าสู่ระบบเป็น</span>
@@ -60,12 +62,18 @@
       <button id="btn-logout" type="button" class="rounded-[10px] px-3 py-2 text-left text-rose-300 hover:bg-slate-800">ออกจากระบบ</button>
     </div>
   </aside>
-  <main id="view" class="box-border min-w-0 flex-[999_1_560px] p-5 sm:p-8"></main>
+  <div class="flex min-w-0 flex-[999_1_560px] flex-col">
+    <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 bg-white px-5 py-2.5 text-[13px] text-slate-600 sm:px-8">
+      <span class="flex items-center gap-1.5"><svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg><span data-clock>&nbsp;</span></span>
+      <span class="text-slate-400" data-site="school_line">โรงเรียนบ้านละลม · สพป.ศรีสะเกษ เขต 3</span>
+    </div>
+    <main id="view" class="box-border min-w-0 flex-1 p-5 sm:p-8"></main>
+  </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script src="config.js?v=7"></script>
-<script src="common.js?v=7"></script>
-<script src="admin.js?v=7"></script>
+<script src="config.js?v=8"></script>
+<script src="common.js?v=8"></script>
+<script src="admin.js?v=8"></script>
 </body>
 </html>
