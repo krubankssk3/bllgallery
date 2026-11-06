@@ -127,11 +127,31 @@
     return s.charAt(0) || '?';
   };
 
+  /* ---------- เอฟเฟกต์ค่อยๆ ปรากฏเมื่อเลื่อนถึง ---------- */
+  var io = null;
+  if (w.IntersectionObserver) {
+    io = new w.IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); }
+      });
+    }, { rootMargin: '0px 0px -8% 0px', threshold: 0.05 });
+  }
+  PR.reveal = function (root) {
+    var list = (root || d).querySelectorAll('.reveal:not(.in)');
+    for (var i = 0; i < list.length; i++) {
+      if (io) io.observe(list[i]); else list[i].classList.add('in');
+    }
+  };
+  d.addEventListener('DOMContentLoaded', function () { PR.reveal(d); });
+
   /* ---------- SweetAlert2 ธีมเดียวกับเว็บ ---------- */
   if (w.Swal) {
     PR.swal = w.Swal.mixin({
       buttonsStyling: false,
+      showClass: { popup: 'pr-pop-in', backdrop: 'swal2-backdrop-show' },
+      hideClass: { popup: 'pr-pop-out', backdrop: 'swal2-backdrop-hide' },
       customClass: {
+        container: 'pr-backdrop',
         popup: 'pr-swal',
         title: 'pr-swal-title',
         htmlContainer: 'pr-swal-text',
@@ -149,7 +169,13 @@
       showConfirmButton: false,
       timer: 3000,
       timerProgressBar: true,
-      customClass: { popup: 'pr-toast' }
+      showClass: { popup: 'pr-toast-in' },
+      hideClass: { popup: 'pr-toast-out' },
+      customClass: { popup: 'pr-toast' },
+      didOpen: function (t) {
+        t.addEventListener('mouseenter', w.Swal.stopTimer);
+        t.addEventListener('mouseleave', w.Swal.resumeTimer);
+      }
     });
   }
 
@@ -188,15 +214,19 @@
   PR.qr = function (title, url) {
     var src = 'https://quickchart.io/qr?size=600&margin=2&format=png&text=' + encodeURIComponent(url);
     PR.swal.fire({
-      title: 'QR Code อัลบั้ม',
-      html: '<img src="' + src + '" alt="QR Code" style="width:220px;height:220px;margin:4px auto 10px;border-radius:12px">' +
-        '<div style="font-weight:600;color:#0F172A">' + PR.esc(title) + '</div>' +
-        '<div style="font-size:12px;color:#64748B;word-break:break-all;margin-top:4px">' + PR.esc(url) + '</div>',
+      title: 'สแกนเพื่อเปิดอัลบั้ม',
+      html: '<div class="pr-qr-frame"><img src="' + src + '" alt="QR Code อัลบั้ม ' + PR.esc(title) + '" width="200" height="200"></div>' +
+        '<div style="font-weight:600;color:#0F172A;line-height:1.6">' + PR.esc(title) + '</div>' +
+        '<div style="font-size:12px;color:#64748B;word-break:break-all;margin-top:4px;line-height:1.6">' + PR.esc(url) + '</div>',
       showCancelButton: true,
+      showDenyButton: true,
       confirmButtonText: 'เปิดภาพ QR',
-      cancelButtonText: 'ปิด'
+      denyButtonText: 'คัดลอกลิงก์',
+      cancelButtonText: 'ปิด',
+      customClass: { container: 'pr-backdrop', popup: 'pr-swal', title: 'pr-swal-title', htmlContainer: 'pr-swal-text', actions: 'pr-swal-actions', confirmButton: 'pr-btn pr-btn-primary', denyButton: 'pr-btn pr-btn-soft', cancelButton: 'pr-btn pr-btn-ghost' }
     }).then(function (r) {
       if (r.isConfirmed) w.open(src, '_blank');
+      else if (r.isDenied) PR.copy(url);
     });
   };
 
