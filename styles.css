@@ -1,7 +1,24 @@
-/* styles.css : ส่วนที่ Tailwind ไม่ครอบคลุม — ธีม SweetAlert2, lightbox, hover */
+/* styles.css : ส่วนที่ Tailwind ไม่ครอบคลุม — เอฟเฟกต์, ธีม SweetAlert2, lightbox, hover */
 
 body { font-family: 'Noto Sans Thai', system-ui, sans-serif; }
-.font-display { font-family: 'Anuphan', 'Noto Sans Thai', sans-serif; }
+/* ภาษาไทยมีสระบน-ล่าง ห้ามบีบระยะบรรทัดหรือระยะตัวอักษร */
+.font-display { font-family: 'Anuphan', 'Noto Sans Thai', sans-serif; letter-spacing: 0; }
+h1, h2, h3 { letter-spacing: 0; }
+
+/* ---------- ค่อยๆ ปรากฏ (ทำงานเมื่อมี JS เท่านั้น) ---------- */
+@keyframes pr-fade-up { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+@keyframes pr-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes pr-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
+.js .reveal { opacity: 0; }
+.js .reveal.in { opacity: 1; animation: pr-fade-up .7s cubic-bezier(.22, 1, .36, 1) backwards; animation-delay: var(--d, 0ms); }
+.float-slow { animation: pr-float 6s ease-in-out infinite; }
+img.fade { opacity: 0; transition: opacity .6s ease, transform .5s ease; }
+img.fade.loaded { opacity: 1; }
+.view-enter > * { animation: pr-fade-up .45s cubic-bezier(.22, 1, .36, 1) backwards; }
+.view-enter > *:nth-child(2) { animation-delay: 60ms; }
+.view-enter > *:nth-child(3) { animation-delay: 120ms; }
+.view-enter > *:nth-child(4) { animation-delay: 180ms; }
+.view-enter > *:nth-child(n+5) { animation-delay: 240ms; }
 
 .card { transition: transform .2s ease, box-shadow .2s ease; }
 .card:hover { transform: translateY(-4px); box-shadow: 0 20px 25px -5px rgba(15,23,42,.10), 0 8px 10px -6px rgba(15,23,42,.10); }
@@ -12,8 +29,8 @@ body { font-family: 'Noto Sans Thai', system-ui, sans-serif; }
 
 /* ---------- SweetAlert2 ธีมคลังภาพ ---------- */
 .pr-swal { border-radius: 20px !important; padding: 28px 24px 24px !important; font-family: 'Noto Sans Thai', system-ui, sans-serif !important; box-shadow: 0 25px 50px -12px rgba(15,23,42,.35) !important; }
-.pr-swal-title { font-family: 'Anuphan', 'Noto Sans Thai', sans-serif !important; font-size: 21px !important; font-weight: 700 !important; color: #0F172A !important; padding: 8px 0 0 !important; }
-.pr-swal-text { font-size: 14px !important; line-height: 1.65 !important; color: #475569 !important; margin-top: 8px !important; }
+.pr-swal-title { font-family: 'Anuphan', 'Noto Sans Thai', sans-serif !important; font-size: 21px !important; font-weight: 700 !important; line-height: 1.5 !important; color: #0F172A !important; padding: 8px 0 0 !important; }
+.pr-swal-text { font-size: 14px !important; line-height: 1.75 !important; color: #475569 !important; margin-top: 8px !important; }
 .pr-swal-actions { gap: 8px; margin-top: 20px !important; }
 .pr-btn { height: 44px; padding: 0 20px; border-radius: 12px; border: 0; font: inherit; font-size: 15px; font-weight: 600; cursor: pointer; }
 .pr-btn-primary { background: #0F766E; color: #fff; box-shadow: 0 4px 6px -1px rgba(15,118,110,.30); }
@@ -31,6 +48,32 @@ body { font-family: 'Noto Sans Thai', system-ui, sans-serif; }
 .pr-toast { border-radius: 14px !important; box-shadow: 0 10px 15px -3px rgba(15,23,42,.12), 0 4px 6px -4px rgba(15,23,42,.10) !important; border: 1px solid #E2E8F0 !important; font-family: 'Noto Sans Thai', system-ui, sans-serif !important; }
 .pr-toast .swal2-title { font-size: 14px !important; font-weight: 600 !important; color: #0F172A !important; }
 .swal2-timer-progress-bar { background: #14B8A6 !important; }
+
+/* แอนิเมชันเปิด/ปิดป๊อปอัป + พื้นหลังเบลอ */
+@keyframes pr-pop-in { from { opacity: 0; transform: translateY(10px) scale(.94); } to { opacity: 1; transform: none; } }
+@keyframes pr-pop-out { to { opacity: 0; transform: scale(.96); } }
+@keyframes pr-toast-in { from { opacity: 0; transform: translateX(24px); } to { opacity: 1; transform: none; } }
+@keyframes pr-toast-out { to { opacity: 0; transform: translateX(24px); } }
+.pr-pop-in { animation: pr-pop-in .32s cubic-bezier(.22, 1, .36, 1) both !important; }
+.pr-pop-out { animation: pr-pop-out .18s ease-in both !important; }
+.pr-toast-in { animation: pr-toast-in .35s cubic-bezier(.22, 1, .36, 1) both !important; }
+.pr-toast-out { animation: pr-toast-out .2s ease-in both !important; }
+.swal2-container.pr-backdrop.swal2-backdrop-show { background: rgba(15, 23, 42, .42) !important; backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+.pr-swal .swal2-validation-message { background: #FFF1F2; color: #9F1239; border-radius: 10px; margin: 12px 0 0; font-size: 13px; }
+.pr-swal .swal2-validation-message::before { background-color: #E11D48; }
+.pr-swal .swal2-loader { border-color: #0F766E transparent #0F766E transparent; }
+.pr-btn-soft { background: #F0FDFA; color: #115E59; box-shadow: inset 0 0 0 1px #99F6E4; }
+.pr-btn-soft:hover { background: #CCFBF1; }
+.pr-toast .swal2-html-container { font-size: 12px !important; color: #64748B !important; margin: 2px 0 0 !important; }
+.pr-qr-frame { display: inline-flex; padding: 14px; margin: 4px auto 12px; border-radius: 18px; background: #fff; box-shadow: 0 0 0 1px #E2E8F0, 0 10px 20px -8px rgba(15, 23, 42, .18); }
+.pr-qr-frame img { display: block; width: 200px; height: 200px; border-radius: 8px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .js .reveal, .js .reveal.in { opacity: 1; animation: none; }
+  .float-slow, .view-enter > *, .pr-pop-in, .pr-pop-out, .pr-toast-in, .pr-toast-out { animation: none !important; }
+  img.fade { opacity: 1; transition: none; }
+  .card, .ph { transition: none; }
+}
 
 /* ---------- ฟอร์มในป๊อปอัป (หน้าแอดมิน) ---------- */
 .pr-form { text-align: left; display: flex; flex-direction: column; gap: 12px; margin-top: 4px; }
