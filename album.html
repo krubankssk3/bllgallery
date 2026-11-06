@@ -14,7 +14,7 @@
   tailwind.config = { theme: { extend: { fontFamily: { sans: ['"Noto Sans Thai"', 'system-ui', 'sans-serif'], display: ['Anuphan', '"Noto Sans Thai"', 'sans-serif'] } } } };
 </script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
-<link rel="stylesheet" href="styles.css?v=6">
+<link rel="stylesheet" href="styles.css?v=7">
 </head>
 <body class="bg-slate-50 text-slate-900 antialiased">
 
@@ -81,8 +81,8 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script src="config.js?v=6"></script>
-<script src="common.js?v=6"></script>
+<script src="config.js?v=7"></script>
+<script src="common.js?v=7"></script>
 <script>
 (function () {
   var id = PR.param('id');
@@ -145,32 +145,53 @@
   }
 
   function downloadZip(a) {
-    PR.swal.fire({
-      title: 'กำลังเตรียมไฟล์ .zip',
-      html: '<div class="pr-progress"><span></span></div><div style="font-size:13px;margin-top:10px">อัลบั้มใหญ่อาจใช้เวลาสักครู่ อย่าเพิ่งปิดหน้านี้</div>',
-      allowOutsideClick: false,
-      showConfirmButton: false,
-      didOpen: function () { window.Swal.showLoading(); }
-    });
+    var images = state.photos.filter(function (p) { return p.type !== 'video'; }).length;
+    var run = PR.runner.open({ title: 'กำลังเตรียมไฟล์ .zip', text: 'กล้องน้อยกำลังวิ่งไปเก็บภาพ…' });
+    var finish = PR.runner.estimate(run, Math.max(4, images * 0.2), [
+      [0, 'กล้องน้อยกำลังวิ่งไปเก็บภาพ…'],
+      [30, 'กำลังรวบรวม ' + PR.num(images) + ' ภาพ…'],
+      [60, 'กำลังบีบอัดเป็นไฟล์ .zip…'],
+      [85, 'ใกล้ถึงเส้นชัยแล้ว…']
+    ]);
     PR.api({ action: 'zip', id: a.id }).then(function (r) {
+      finish();
       if (!r || !r.ok) throw new Error((r && r.message) || 'เตรียมไฟล์ไม่สำเร็จ');
-      if (r.parts.length === 1) {
-        window.Swal.close();
-        PR.toast.fire({ icon: 'success', title: 'เริ่มดาวน์โหลดแล้ว', text: r.parts[0].name + ' · ' + fmtSize(r.parts[0].size) });
-        window.location.href = r.parts[0].url;
-        return;
-      }
-      PR.swal.fire({
-        icon: 'success',
-        title: 'ไฟล์พร้อมแล้ว ' + r.parts.length + ' ส่วน',
-        html: '<div class="pr-zip-list">' + r.parts.map(function (z) {
-          return '<a href="' + PR.esc(z.url) + '" target="_blank" rel="noopener"><span>' + PR.esc(z.name) + '</span><small>' + fmtSize(z.size) + '</small></a>';
-        }).join('') + '</div>',
-        confirmButtonText: 'ปิด'
-      });
+      run.done(r.parts.length === 1 ? 'ถึงเส้นชัยแล้ว! เริ่มดาวน์โหลด' : 'ถึงเส้นชัยแล้ว! ไฟล์พร้อม ' + r.parts.length + ' ส่วน');
+      setTimeout(function () {
+        if (r.parts.length === 1) {
+          run.close();
+          PR.toast.fire({ icon: 'success', title: 'เริ่มดาวน์โหลดแล้ว', text: r.parts[0].name + ' · ' + fmtSize(r.parts[0].size) });
+          window.location.href = r.parts[0].url;
+          return;
+        }
+        PR.swal.fire({
+          icon: 'success',
+          title: 'ไฟล์พร้อมแล้ว ' + r.parts.length + ' ส่วน',
+          html: '<div class="pr-zip-list">' + r.parts.map(function (z) {
+            return '<a href="' + PR.esc(z.url) + '" target="_blank" rel="noopener"><span>' + PR.esc(z.name) + '</span><small>' + fmtSize(z.size) + '</small></a>';
+          }).join('') + '</div>',
+          confirmButtonText: 'ปิด'
+        });
+      }, 1300);
     }).catch(function (err) {
+      finish();
       PR.swal.fire({ icon: 'error', title: 'ดาวน์โหลดไม่สำเร็จ', text: err.message === 'timeout' ? 'เตรียมไฟล์นานเกินไป ลองกดใหม่อีกครั้ง' : err.message });
     });
+  }
+
+  // ดาวน์โหลดทีละภาพ/คลิป: วิ่งสั้นๆ ให้รู้ว่ากดแล้ว จากนั้นเริ่มดาวน์โหลด
+  function downloadOne(url, isVideo) {
+    var run = PR.runner.open({ title: isVideo ? 'กำลังเตรียมคลิป' : 'กำลังเตรียมภาพ', text: 'กล้องน้อยกำลังวิ่งไปหยิบไฟล์…' });
+    var start = Date.now();
+    var timer = setInterval(function () {
+      var p = Math.min(100, (Date.now() - start) / 9);
+      run.set(p, p > 60 ? 'ใกล้ถึงแล้ว…' : '');
+      if (p >= 100) {
+        clearInterval(timer);
+        run.done('ถึงเส้นชัยแล้ว! เริ่มดาวน์โหลด');
+        setTimeout(function () { run.close(); window.location.href = url; }, 900);
+      }
+    }, 60);
   }
 
   // นับยอดเข้าชมวันละครั้งต่อเครื่อง
@@ -280,6 +301,11 @@
     renderGrid();
   });
   el('lb-close').onclick = closeLb;
+  el('lb-dl').addEventListener('click', function (e) {
+    e.preventDefault();
+    var p = state.view[state.index];
+    downloadOne(el('lb-dl').href, p && p.type === 'video');
+  });
   el('lb-prev').onclick = function () { step(-1); };
   el('lb-next').onclick = function () { step(1); };
   el('lb').addEventListener('click', function (e) {
