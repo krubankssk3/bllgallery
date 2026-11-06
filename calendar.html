@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ปฏิทินกิจกรรม – คลังภาพประชาสัมพันธ์ โรงเรียนบ้านละลม</title>
+<meta name="description" content="ปฏิทินกิจกรรมของโรงเรียนบ้านละลม พร้อมอัลบั้มภาพของแต่ละวัน">
+<link rel="icon" href="https://img2.pic.in.th/pic/Logo-7aecb8e321ff2955.png">
+<script>document.documentElement.className += ' js';</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anuphan:wght@400;500;600;700&amp;family=Noto+Sans+Thai:wght@400;500;600&amp;display=swap">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = { theme: { extend: { fontFamily: { sans: ['"Noto Sans Thai"', 'system-ui', 'sans-serif'], display: ['Anuphan', '"Noto Sans Thai"', 'sans-serif'] } } } };
+</script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+<link rel="stylesheet" href="styles.css?v=6">
+</head>
+<body class="bg-slate-50 text-slate-900 antialiased">
+
+<header class="sticky top-0 z-30 border-b border-slate-200 bg-white/85 backdrop-blur">
+  <div class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-6 py-3.5">
+    <a href="index.html" class="flex items-center gap-3 text-slate-900">
+      <img src="https://img2.pic.in.th/pic/Logo-7aecb8e321ff2955.png" alt="ตราโรงเรียนบ้านละลม" class="h-11 w-11 rounded-xl bg-white object-contain p-0.5 ring-1 ring-slate-200">
+      <span class="flex flex-col">
+        <span class="font-display text-lg font-bold">คลังภาพประชาสัมพันธ์</span>
+        <span class="text-[13px] text-slate-500">โรงเรียนบ้านละลม · สพป.ศรีสะเกษ เขต 3</span>
+      </span>
+    </a>
+    <nav aria-label="เมนูหลัก" class="flex flex-wrap items-center gap-1">
+      <a href="index.html" class="rounded-[10px] px-3.5 py-2.5 text-[15px] text-slate-700 hover:bg-slate-100">อัลบั้มทั้งหมด</a>
+      <a href="calendar.html" aria-current="page" class="rounded-[10px] bg-teal-50 px-3.5 py-2.5 text-[15px] font-semibold text-teal-800">ปฏิทินกิจกรรม</a>
+      <a href="admin.html" class="ml-2 rounded-[10px] bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800">สำหรับครู</a>
+    </nav>
+  </div>
+</header>
+
+<main class="mx-auto flex max-w-6xl flex-col gap-6 px-6 pb-14 pt-10">
+  <div class="reveal flex flex-wrap items-end justify-between gap-4">
+    <div class="flex flex-col gap-1">
+      <h1 class="font-display text-[30px] font-bold leading-[1.5] sm:text-4xl">ปฏิทินกิจกรรม</h1>
+      <p class="text-slate-600">กิจกรรมของโรงเรียนในแต่ละวัน แตะชื่อกิจกรรมเพื่อดูภาพ</p>
+    </div>
+    <div class="flex items-center gap-2">
+      <button id="prev" type="button" aria-label="เดือนก่อนหน้า" class="flex h-11 w-11 items-center justify-center rounded-xl border border-slate-300 bg-white hover:bg-slate-50">
+        <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 5l-7 7 7 7"></path></svg>
+      </button>
+      <div id="month" class="min-w-[170px] text-center font-display text-lg font-semibold" aria-live="polite">–</div>
+      <button id="next" type="button" aria-label="เดือนถัดไป" class="flex h-11 w-11 items-center justify-center rounded-xl border border-slate-300 bg-white hover:bg-slate-50">
+        <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 5l7 7-7 7"></path></svg>
+      </button>
+      <button id="today" type="button" class="h-11 rounded-xl border border-slate-300 bg-white px-4 text-sm font-semibold hover:bg-slate-50">เดือนนี้</button>
+    </div>
+  </div>
+
+  <section class="reveal overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm" style="--d:80ms" aria-label="ปฏิทินรายเดือน">
+    <div class="grid grid-cols-7 border-b border-slate-200 bg-slate-50 text-center text-[13px] font-semibold text-slate-500">
+      <div class="py-2.5 text-rose-600">อา.</div><div class="py-2.5">จ.</div><div class="py-2.5">อ.</div><div class="py-2.5">พ.</div><div class="py-2.5">พฤ.</div><div class="py-2.5">ศ.</div><div class="py-2.5">ส.</div>
+    </div>
+    <div id="cal" class="grid grid-cols-7"></div>
+  </section>
+
+  <section class="flex flex-col gap-3" aria-labelledby="list-title">
+    <h2 id="list-title" class="font-display text-xl font-bold leading-[1.5]">กิจกรรมเดือนนี้</h2>
+    <div id="list" class="flex flex-col gap-3"></div>
+  </section>
+</main>
+
+<footer class="border-t border-slate-200 bg-white">
+  <div class="mx-auto max-w-6xl px-6 py-6 text-[13px] text-slate-500">พัฒนาโดย นายชิติพัทธ์ นิลวรรณ ตำแหน่ง ครู โรงเรียนบ้านละลม สพป.ศรีสะเกษ เขต 3</div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="config.js?v=6"></script>
+<script src="common.js?v=6"></script>
+<script>
+(function () {
+  var state = { albums: [], byDay: {}, y: 0, m: 0 };
+  function el(id) { return document.getElementById(id); }
+  function pad(n) { return (n < 10 ? '0' : '') + n; }
+
+  var now = PR.dayKey(new Date().toISOString()).split('-');
+  state.y = Number(now[0]);
+  state.m = Number(now[1]) - 1;
+  var todayKey = now.join('-');
+
+  function monthLabel(y, m) {
+    try { return new Date(y, m, 15).toLocaleDateString('th-TH', { month: 'long', year: 'numeric' }); } catch (e) { return (m + 1) + '/' + y; }
+  }
+
+  function index(albums) {
+    state.albums = albums;
+    state.byDay = {};
+    albums.forEach(function (a) {
+      var k = PR.dayKey(a.date || a.updated);
+      if (!k) return;
+      (state.byDay[k] = state.byDay[k] || []).push(a);
+    });
+  }
+
+  function chip(a) {
+    var c = /^#[0-9a-fA-F]{6}$/.test(a.color || '') ? a.color : '#0F766E';
+    return '<a href="album.html?id=' + encodeURIComponent(a.id) + '" title="' + PR.esc(a.title) + '" class="block truncate rounded-md px-1.5 py-0.5 text-[12px] font-medium leading-[1.6] hover:opacity-80" style="background:' + c + '1A;color:' + c + '">' + PR.esc(a.title) + '</a>';
+  }
+
+  function render() {
+    var y = state.y, m = state.m;
+    el('month').textContent = monthLabel(y, m);
+    var first = new Date(y, m, 1).getDay();
+    var days = new Date(y, m + 1, 0).getDate();
+    var cells = [];
+    var i;
+    for (i = 0; i < first; i++) cells.push('<div class="min-h-[64px] border-b border-r border-slate-100 bg-slate-50/60 sm:min-h-[112px]"></div>');
+    for (var d = 1; d <= days; d++) {
+      var key = y + '-' + pad(m + 1) + '-' + pad(d);
+      var list = state.byDay[key] || [];
+      var isToday = key === todayKey;
+      var dow = (first + d - 1) % 7;
+      var num = '<span class="inline-flex h-7 min-w-[28px] items-center justify-center rounded-full px-1 text-[13px] ' +
+        (isToday ? 'bg-teal-700 font-bold text-white' : dow === 0 ? 'text-rose-600' : 'text-slate-700') + '">' + d + '</span>';
+      var desktop = list.slice(0, 3).map(chip).join('') + (list.length > 3 ? '<span class="block px-1.5 text-[12px] text-slate-500">+' + (list.length - 3) + ' กิจกรรม</span>' : '');
+      var dots = list.length ? '<span class="mt-1 flex justify-center gap-0.5 sm:hidden">' + list.slice(0, 3).map(function (a) {
+        return '<span class="h-1.5 w-1.5 rounded-full" style="background:' + (a.color || '#0F766E') + '"></span>';
+      }).join('') + '</span>' : '';
+      cells.push('<div class="flex min-h-[64px] flex-col gap-1 border-b border-r border-slate-100 p-1.5 sm:min-h-[112px]' + (list.length ? ' bg-white' : '') + '">' +
+        '<div class="text-center sm:text-left">' + num + '</div>' + dots +
+        '<div class="hidden flex-col gap-1 sm:flex">' + desktop + '</div></div>');
+    }
+    while (cells.length % 7) cells.push('<div class="min-h-[64px] border-b border-r border-slate-100 bg-slate-50/60 sm:min-h-[112px]"></div>');
+    el('cal').innerHTML = cells.join('');
+
+    var prefix = y + '-' + pad(m + 1) + '-';
+    var month = state.albums.filter(function (a) { return PR.dayKey(a.date || a.updated).indexOf(prefix) === 0; })
+      .sort(function (x, z) { return x.date > z.date ? 1 : -1; });
+    el('list-title').textContent = 'กิจกรรมเดือน' + monthLabel(y, m).replace(/\s*พ\.ศ\.\s*/, ' ') + ' (' + month.length + ')';
+    if (!month.length) {
+      var latest = state.albums[0];
+      el('list').innerHTML = '<div class="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-10 text-center">' +
+        '<div class="font-display text-lg font-semibold leading-[1.5]">เดือนนี้ยังไม่มีกิจกรรม</div>' +
+        (latest ? '<button type="button" id="go-latest" class="pr-btn pr-btn-soft mt-4">ไปเดือนที่มีกิจกรรมล่าสุด</button>' : '') + '</div>';
+      if (latest) el('go-latest').onclick = function () {
+        var k = PR.dayKey(latest.date || latest.updated).split('-');
+        state.y = Number(k[0]); state.m = Number(k[1]) - 1; render();
+      };
+      return;
+    }
+    el('list').innerHTML = month.map(function (a, n) {
+      var t = PR.tone(n);
+      return '<a href="album.html?id=' + encodeURIComponent(a.id) + '" style="--d:' + Math.min(n, 8) * 50 + 'ms" class="reveal card flex items-center gap-4 rounded-2xl border border-slate-200 bg-white p-3 text-slate-900 shadow-sm">' +
+        '<div class="relative flex h-16 w-16 flex-none items-center justify-center overflow-hidden rounded-xl" style="background:' + t[0] + '">' + PR.photoIcon(t[1], 26) +
+        (a.cover ? '<img src="' + PR.thumb(a.cover, 160) + '" alt="" loading="lazy" referrerpolicy="no-referrer" class="fade absolute inset-0 h-full w-full object-cover" onload="this.classList.add(\'loaded\')" onerror="this.style.display=\'none\'">' : '') + '</div>' +
+        '<div class="flex min-w-0 flex-1 flex-col gap-1"><span class="truncate font-semibold leading-[1.5]">' + PR.esc(a.title) + '</span>' +
+        '<span class="flex flex-wrap items-center gap-2 text-[13px] text-slate-500">' + PR.catBadge(a.category, a.color) + '<span>' + PR.thaiDate(a.date) + '</span><span>' + PR.num(a.count) + ' ภาพ</span></span></div>' +
+        '<span class="hidden text-sm font-semibold text-teal-700 sm:inline">ดูอัลบั้ม →</span></a>';
+    }).join('');
+    PR.reveal(el('list'));
+  }
+
+  function shift(n) {
+    state.m += n;
+    if (state.m < 0) { state.m = 11; state.y--; }
+    if (state.m > 11) { state.m = 0; state.y++; }
+    render();
+  }
+  el('prev').onclick = function () { shift(-1); };
+  el('next').onclick = function () { shift(1); };
+  el('today').onclick = function () { var k = todayKey.split('-'); state.y = Number(k[0]); state.m = Number(k[1]) - 1; render(); };
+
+  if (!PR.configured()) { el('list').innerHTML = PR.notConfiguredHtml(); return; }
+  var cached = PR.store.get('pr_home');
+  if (cached && cached.ok) { index(cached.albums); render(); } else { render(); }
+  PR.api({ action: 'home' }).then(function (d) {
+    if (!d || !d.ok) throw new Error('bad');
+    PR.store.set('pr_home', d);
+    index(d.albums);
+    render();
+  }).catch(function () {
+    if (!state.albums.length) el('list').innerHTML = '<div class="rounded-2xl border border-rose-200 bg-rose-50 px-6 py-8 text-center text-rose-900">โหลดข้อมูลไม่สำเร็จ ตรวจการเชื่อมต่อแล้วลองใหม่</div>';
+  });
+})();
+</script>
+</body>
+</html>
