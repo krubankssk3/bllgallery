@@ -539,6 +539,13 @@
   });
 
   /* ---------- เริ่มต้น ---------- */
+  if (typeof PR.post !== 'function') {
+    el('login').classList.remove('hidden'); el('login').classList.add('flex');
+    el('login-form').innerHTML = '<div class="rounded-2xl border border-amber-200 bg-amber-50 p-6 text-amber-900">' +
+      '<div class="font-display text-lg font-bold">ไฟล์ common.js บนเว็บเป็นรุ่นเก่า</div>' +
+      '<p class="mt-1 text-sm">อัปโหลด common.js ตัวล่าสุดขึ้นเว็บ แล้วกด Ctrl+F5 เพื่อโหลดหน้าใหม่</p></div>';
+    return;
+  }
   if (!PR.configured()) {
     el('login').classList.remove('hidden'); el('login').classList.add('flex');
     el('login-form').innerHTML = PR.notConfiguredHtml();
