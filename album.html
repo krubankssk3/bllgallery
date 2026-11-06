@@ -14,15 +14,22 @@
   tailwind.config = { theme: { extend: { fontFamily: { sans: ['"Noto Sans Thai"', 'system-ui', 'sans-serif'], display: ['Anuphan', '"Noto Sans Thai"', 'sans-serif'] } } } };
 </script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
-<link rel="stylesheet" href="styles.css?v=7">
+<link rel="stylesheet" href="styles.css?v=8">
 </head>
 <body class="bg-slate-50 text-slate-900 antialiased">
+
+<div class="bg-slate-900 text-slate-200">
+  <div class="mx-auto flex max-w-6xl items-center justify-between gap-3 px-6 py-1.5 text-[12.5px] leading-[1.7]">
+    <span class="flex items-center gap-1.5"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg><span data-clock>&nbsp;</span></span>
+    <span class="hidden text-slate-400 sm:inline" data-site="school_line">โรงเรียนบ้านละลม · สพป.ศรีสะเกษ เขต 3</span>
+  </div>
+</div>
 
 <header class="sticky top-0 z-30 border-b border-slate-200 bg-white/85 backdrop-blur">
   <div class="mx-auto flex max-w-6xl items-center gap-3 px-6 py-3.5">
     <a href="index.html" class="flex items-center gap-3 text-slate-900">
-      <img src="https://img2.pic.in.th/pic/Logo-7aecb8e321ff2955.png" alt="ตราโรงเรียนบ้านละลม" class="h-10 w-10 rounded-xl bg-white object-contain p-0.5 ring-1 ring-slate-200">
-      <span class="font-display text-[17px] font-bold">คลังภาพประชาสัมพันธ์</span>
+      <img src="https://img2.pic.in.th/pic/Logo-7aecb8e321ff2955.png" alt="ตราโรงเรียน" data-site="logo" class="h-10 w-10 rounded-xl bg-white object-contain p-0.5 ring-1 ring-slate-200">
+      <span class="font-display text-[17px] font-bold" data-site="site_name">คลังภาพประชาสัมพันธ์</span>
     </a>
   </div>
 </header>
@@ -50,7 +57,7 @@
 </main>
 
 <footer class="border-t border-slate-200 bg-white">
-  <div class="mx-auto max-w-6xl px-6 py-6 text-[13px] text-slate-500">พัฒนาโดย นายชิติพัทธ์ นิลวรรณ ตำแหน่ง ครู โรงเรียนบ้านละลม สพป.ศรีสะเกษ เขต 3</div>
+  <div class="mx-auto max-w-6xl px-6 py-6 text-[13px] text-slate-500" data-site="footer">พัฒนาโดย นายชิติพัทธ์ นิลวรรณ ตำแหน่ง ครู โรงเรียนบ้านละลม สพป.ศรีสะเกษ เขต 3</div>
 </footer>
 
 <div id="lb" class="lb" role="dialog" aria-modal="true" aria-label="ดูภาพ">
@@ -81,8 +88,8 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script src="config.js?v=7"></script>
-<script src="common.js?v=7"></script>
+<script src="config.js?v=8"></script>
+<script src="common.js?v=8"></script>
 <script>
 (function () {
   var id = PR.param('id');
@@ -98,7 +105,8 @@
 
   function renderHead() {
     var a = state.album;
-    document.title = a.title + ' – คลังภาพประชาสัมพันธ์ โรงเรียนบ้านละลม';
+    var site = PR.store.get('pr_site') || {};
+    document.title = a.title + ' – ' + (site.site_name || 'คลังภาพประชาสัมพันธ์') + ' ' + (site.school || '');
     el('crumb').textContent = a.category || 'อัลบั้ม';
     el('head').classList.add('in');
     var avatars = a.senders.slice(0, 3).map(function (n, i) {
@@ -327,6 +335,7 @@
   });
 
   function renderAll(d) {
+    PR.applySite(d.site);
     state.album = d.album;
     state.photos = d.photos;
     renderHead();
