@@ -126,6 +126,7 @@
     PR.post({ action: 'login', username: el('lg-user').value, password: el('lg-pass').value }).then(function (r) {
       if (!r.ok) throw new Error(r.message || 'เข้าสู่ระบบไม่สำเร็จ');
       S.token = r.token; S.user = r.user;
+      PR.applySite(r.site);
       sset('pr_admin_token', r.token);
       el('lg-pass').value = '';
       showApp();
@@ -176,6 +177,7 @@
     if (view === 'groups') return viewGroups();
     if (view === 'users') return viewUsers();
     if (view === 'settings') return viewSettings();
+    if (view === 'site') return viewSite();
     return viewPending();
   }
   window.addEventListener('hashchange', function () { if (S.token) route(); });
@@ -336,7 +338,9 @@
     var actions = '<div class="flex flex-wrap gap-2">' +
       (a.status === 'published' ? '<a href="' + esc(webUrl) + '" target="_blank" rel="noopener" class="flex h-11 items-center rounded-xl border border-slate-300 bg-white px-4 text-sm font-semibold hover:bg-slate-50">เปิดบนเว็บ ↗</a>' : '') +
       (a.folder ? '<a href="' + esc(a.folder) + '" target="_blank" rel="noopener" class="flex h-11 items-center rounded-xl border border-slate-300 bg-white px-4 text-sm font-semibold hover:bg-slate-50">โฟลเดอร์ Drive ↗</a>' : '') +
-      (a.status === 'published' ? btn('ซ่อนอัลบั้ม', 'albumHide', 'danger') : btn('เผยแพร่อีกครั้ง', 'albumShow', 'primary')) + '</div>';
+      btn('+ อัปโหลดภาพ', 'uploadPhotos', 'primary') +
+      '<input id="up-files" type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple class="hidden" aria-label="เลือกภาพที่จะอัปโหลด">' +
+      (a.status === 'published' ? btn('ซ่อนอัลบั้ม', 'albumHide', 'danger') : btn('เผยแพร่อีกครั้ง', 'albumShow')) + '</div>';
 
     var form = card('<form id="al-form" class="grid gap-4 p-5 sm:grid-cols-2">' +
       '<div class="sm:col-span-2"><label class="pr-label" for="f-title">ชื่ออัลบั้ม</label><input id="f-title" class="pr-input" maxlength="100" value="' + esc(a.title) + '"></div>' +
@@ -378,6 +382,12 @@
         '<div class="flex gap-1 rounded-xl bg-slate-100 p-1">' + filters + '</div></div>' + bar + grid + '</div>') +
       '</div>';
 
+    el('up-files').addEventListener('change', function () {
+      var files = [].slice.call(el('up-files').files || []);
+      el('up-files').value = '';
+      if (files.length) uploadPhotos(files);
+    });
+
     el('al-form').addEventListener('submit', function (e) {
       e.preventDefault();
       busy();
@@ -414,6 +424,44 @@
       busy();
       call('setAlbumStatus', { id: S.album.id, status: status }).then(function () { ok(hide ? 'ซ่อนอัลบั้มแล้ว' : 'เผยแพร่อัลบั้มแล้ว'); viewAlbum(S.album.id); }).catch(fail);
     });
+  }
+
+  // อัปโหลดทีละไฟล์ ย่อด้านยาวสุด 2560px ก่อนส่ง กล้องน้อยวิ่งตามจำนวนไฟล์ที่ส่งเสร็จจริง
+  function uploadPhotos(files) {
+    var albumId = S.album.id;
+    var total = files.length, done = 0, failed = [];
+    var run = PR.runner.open({ title: 'กำลังอัปโหลด ' + total + ' ภาพ', text: 'กล้องน้อยกำลังพาภาพขึ้นอัลบั้ม…' });
+    function next(i) {
+      if (i >= total) {
+        var msg = 'อัปโหลดสำเร็จ ' + done + ' ภาพ' + (failed.length ? ' ไม่สำเร็จ ' + failed.length + ' ภาพ' : '');
+        run.done(failed.length ? msg : 'ถึงเส้นชัยแล้ว! ' + msg);
+        setTimeout(function () {
+          if (failed.length) {
+            PR.swal.fire({ icon: 'warning', title: msg, html: failed.map(function (f) { return esc(f); }).join('<br>'), confirmButtonText: 'ตกลง' });
+          } else {
+            run.close();
+            PR.toast.fire({ icon: 'success', title: msg });
+          }
+          viewAlbum(albumId);
+        }, 1100);
+        return;
+      }
+      var f = files[i];
+      run.set((i / total) * 100, 'ภาพที่ ' + (i + 1) + ' จาก ' + total + ' · ' + f.name);
+      PR.prepareImage(f, 2560, false, function (err, img) {
+        if (err) { failed.push(f.name + ': ' + err.message); return next(i + 1); }
+        call('uploadPhoto', { album_id: albumId, name: img.name, mime: img.mime, data: img.data }).then(function () {
+          done++;
+          run.set(((i + 1) / total) * 100);
+          next(i + 1);
+        }).catch(function (e2) {
+          if (e2.message === 'auth') return;
+          failed.push(f.name + ': ' + e2.message);
+          next(i + 1);
+        });
+      });
+    }
+    next(0);
   }
 
   /* ================= หมวดหมู่ ================= */
@@ -564,6 +612,104 @@
     }).catch(fail);
   }
 
+  /* ================= ข้อมูลโรงเรียน ================= */
+  var SITE_FORM = [
+    ['site_name', 'ชื่อระบบ / ชื่อเว็บ', 60],
+    ['school', 'ชื่อโรงเรียน', 80],
+    ['area', 'สังกัด / เขตพื้นที่', 80],
+    ['hero1', 'หัวข้อหน้าแรก บรรทัดที่ 1', 60],
+    ['hero2', 'หัวข้อหน้าแรก บรรทัดที่ 2 (สีเขียว)', 60],
+    ['hero_desc', 'คำอธิบายใต้หัวข้อหน้าแรก', 300],
+    ['footer', 'ข้อความท้ายเว็บ (ผู้พัฒนา)', 200]
+  ];
+
+  function viewSite() {
+    loading();
+    call('site').then(function (r) {
+      var st = r.site;
+      var fields = SITE_FORM.map(function (f) {
+        var long = f[2] > 100;
+        return '<div' + (long ? ' class="sm:col-span-2"' : '') + '><label class="pr-label" for="site-' + f[0] + '">' + f[1] + '</label>' +
+          (long ? '<textarea id="site-' + f[0] + '" class="pr-input" maxlength="' + f[2] + '">' + esc(st[f[0]]) + '</textarea>'
+                : '<input id="site-' + f[0] + '" class="pr-input" maxlength="' + f[2] + '" value="' + esc(st[f[0]]) + '">') + '</div>';
+      }).join('');
+      V.innerHTML = '<div class="flex flex-col gap-6">' +
+        heading('ข้อมูลโรงเรียน', 'ชื่อ โลโก้ และข้อความที่แสดงบนเว็บทุกหน้า แก้ได้เมื่อย้ายโรงเรียนหรือเปลี่ยนรายละเอียด') +
+        card('<div class="flex flex-wrap items-center gap-5 p-5">' +
+          '<img id="site-logo-img" src="' + esc(st.logo) + '" alt="โลโก้ปัจจุบัน" class="h-24 w-24 rounded-2xl bg-white object-contain p-1 ring-1 ring-slate-200">' +
+          '<div class="flex min-w-[220px] flex-1 flex-col gap-2"><span class="font-semibold">โลโก้โรงเรียน</span>' +
+          '<span class="text-[13px] leading-[1.6] text-slate-500">ใช้ไฟล์ PNG พื้นหลังโปร่งใส หรือ JPG ภาพสี่เหลี่ยมจัตุรัสจะสวยที่สุด ระบบย่อให้อัตโนมัติ</span>' +
+          '<div class="flex flex-wrap gap-2">' + btn('อัปโหลดโลโก้ใหม่', 'uploadLogo', 'primary') + '</div>' +
+          '<input id="logo-file" type="file" accept="image/png,image/jpeg,image/webp" class="hidden" aria-label="เลือกไฟล์โลโก้"></div></div>') +
+        card('<form id="site-form" class="grid gap-4 p-5 sm:grid-cols-2">' + fields +
+          '<div class="flex justify-end sm:col-span-2"><button type="submit" class="h-11 rounded-xl bg-teal-700 px-5 text-sm font-semibold text-white shadow-md shadow-teal-700/25 hover:bg-teal-800">บันทึกข้อมูลโรงเรียน</button></div></form>') +
+        '<div class="rounded-2xl border border-rose-200 bg-rose-50/60 p-5"><div class="flex flex-wrap items-center justify-between gap-4">' +
+          '<div class="flex max-w-xl flex-col gap-1"><span class="font-display text-[17px] font-semibold leading-[1.5] text-rose-900">ล้างข้อมูลเพื่อเริ่มใช้กับโรงเรียนใหม่</span>' +
+          '<span class="text-[13px] leading-[1.7] text-rose-900/80">ลบอัลบั้ม ภาพ กลุ่ม LINE และ Logs ออกจากระบบ (เก็บผู้ใช้และหมวดหมู่ไว้) ระบบจะสำรอง Sheet ทั้งไฟล์ให้ก่อน และไม่ลบไฟล์ภาพใน Drive โฟลเดอร์ภาพเดิมจะถูกเปลี่ยนชื่อเป็น "(เก่า)"</span></div>' +
+          btn('ล้างข้อมูลเริ่มใหม่', 'resetSystem', 'danger') + '</div></div>' +
+        '</div>';
+
+      el('site-form').addEventListener('submit', function (e) {
+        e.preventDefault();
+        var data = {};
+        SITE_FORM.forEach(function (f) { data[f[0]] = el('site-' + f[0]).value; });
+        busy();
+        call('saveSite', data).then(function (r2) { PR.applySite(r2.site); ok('บันทึกข้อมูลโรงเรียนแล้ว'); }).catch(fail);
+      });
+      el('logo-file').addEventListener('change', function () {
+        var f = el('logo-file').files[0];
+        el('logo-file').value = '';
+        if (!f) return;
+        var run = PR.runner.open({ title: 'กำลังอัปโหลดโลโก้', text: 'กล้องน้อยกำลังพาโลโก้ขึ้นเว็บ…' });
+        run.set(25);
+        PR.prepareImage(f, 512, true, function (err, img) {
+          if (err) { fail(err); return; }
+          run.set(55);
+          call('uploadLogo', { name: img.name, mime: img.mime, data: img.data }).then(function (r3) {
+            run.done('ถึงเส้นชัยแล้ว! เปลี่ยนโลโก้เรียบร้อย');
+            PR.applySite(r3.site);
+            el('site-logo-img').src = r3.logo;
+            setTimeout(function () { run.close(); }, 1100);
+          }).catch(fail);
+        });
+      });
+    }).catch(loadError);
+  }
+
+  function resetSystem() {
+    PR.swal.fire({
+      icon: 'warning',
+      title: 'ล้างข้อมูลเริ่มใหม่?',
+      html: 'อัลบั้ม ภาพ และกลุ่ม LINE ทั้งหมดจะหายจากเว็บ (มีสำเนาสำรองให้)<br>พิมพ์คำว่า <b>เริ่มระบบใหม่</b> เพื่อยืนยัน',
+      input: 'text',
+      inputAttributes: { 'aria-label': 'พิมพ์คำยืนยัน', autocomplete: 'off' },
+      showCancelButton: true,
+      confirmButtonText: 'ล้างข้อมูล',
+      cancelButtonText: 'ยกเลิก',
+      customClass: { container: 'pr-backdrop', popup: 'pr-swal', title: 'pr-swal-title', htmlContainer: 'pr-swal-text', input: 'pr-input', actions: 'pr-swal-actions', confirmButton: 'pr-btn pr-btn-danger', cancelButton: 'pr-btn pr-btn-ghost' },
+      preConfirm: function (v) {
+        if (String(v || '').trim() !== 'เริ่มระบบใหม่') { window.Swal.showValidationMessage('พิมพ์ "เริ่มระบบใหม่" ให้ตรง'); return false; }
+        return v;
+      }
+    }).then(function (r) {
+      if (!r.isConfirmed) return;
+      busy('กำลังสำรองและล้างข้อมูล…');
+      call('resetSystem', { confirm_text: r.value }).then(function (res) {
+        PR.store.set('pr_home', null);
+        PR.swal.fire({
+          icon: 'success',
+          title: 'เริ่มระบบใหม่แล้ว',
+          html: '<div style="text-align:left;line-height:1.8">' +
+            '<a href="' + esc(res.backup_url) + '" target="_blank" rel="noopener" style="color:#0F766E;font-weight:600">เปิดไฟล์สำรองข้อมูลเดิม ↗</a><br>' +
+            (res.old_folder_url ? '<a href="' + esc(res.old_folder_url) + '" target="_blank" rel="noopener" style="color:#0F766E;font-weight:600">โฟลเดอร์ภาพเดิม ↗</a><br>' : '') +
+            '<span style="font-size:13px">ขั้นต่อไป: เปลี่ยน LINE_TOKEN เป็นของโรงเรียนใหม่ใน Script properties แล้วรัน diagnose()</span></div>',
+          confirmButtonText: 'ตกลง'
+        });
+        window.location.hash = '#pending';
+      }).catch(fail);
+    });
+  }
+
   /* ---------- จับการคลิกทั้งหน้า ---------- */
   V.addEventListener('click', function (e) {
     var t = e.target.closest('[data-act]');
@@ -602,6 +748,9 @@
         });
     }
     if (act === 'saveSettings') return saveSettings();
+    if (act === 'uploadPhotos') return el('up-files').click();
+    if (act === 'uploadLogo') return el('logo-file').click();
+    if (act === 'resetSystem') return resetSystem();
     if (act === 'previewSummary') return previewSummary();
     if (act === 'userNew') return editUser(null);
     if (act === 'userEdit') return editUser(S.users[Number(t.getAttribute('data-i'))]);
@@ -632,7 +781,7 @@
   }
   S.token = sget('pr_admin_token');
   if (!S.token) return showLogin();
-  call('me').then(function (r) { S.user = r.user; showApp(); }).catch(function (err) {
+  call('me').then(function (r) { S.user = r.user; PR.applySite(r.site); showApp(); }).catch(function (err) {
     if (err.message !== 'auth') showLogin('เชื่อมต่อไม่สำเร็จ ลองเข้าสู่ระบบใหม่');
   });
 })();
