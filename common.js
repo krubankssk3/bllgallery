@@ -39,6 +39,18 @@
     return Promise.race([req, timeout]);
   };
 
+  // เรียก Admin API (POST แบบ text/plain ไม่ต้องผ่าน preflight) หมดเวลา 60 วินาที
+  PR.post = function (body) {
+    var req = fetch(C.API_URL + '?api=admin', { method: 'POST', body: JSON.stringify(body) }).then(function (r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    });
+    var timeout = new Promise(function (resolve, reject) {
+      setTimeout(function () { reject(new Error('timeout')); }, 60000);
+    });
+    return Promise.race([req, timeout]);
+  };
+
   // แคชในเครื่องผู้ชม ให้หน้าเปิดเร็ว (ใช้ไม่ได้ก็ข้ามไป)
   PR.store = {
     get: function (k) {
