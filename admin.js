@@ -175,6 +175,7 @@
     if (view === 'categories') return viewCategories();
     if (view === 'groups') return viewGroups();
     if (view === 'users') return viewUsers();
+    if (view === 'settings') return viewSettings();
     return viewPending();
   }
   window.addEventListener('hashchange', function () { if (S.token) route(); });
@@ -188,7 +189,13 @@
       badge.textContent = r.stats.pending;
       badge.classList.toggle('hidden', !r.stats.pending);
 
-      var tiles = [['อัลบั้มบนเว็บ', r.stats.albums, ''], ['ภาพบนเว็บ', r.stats.photos, ''], ['ภาพรอจัดอัลบั้ม', r.stats.pending, r.pending.length + ' ชุดภาพ'], ['กลุ่ม LINE ที่เปิดรับ', r.stats.groups, '']];
+      var tiles = [['อัลบั้มบนเว็บ', r.stats.albums, ''], ['ภาพบนเว็บ', r.stats.photos, ''], ['ภาพรอจัดอัลบั้ม', r.stats.pending, r.pending.length + ' ชุดภาพ'], ['ยอดเข้าชมทั้งหมด', r.views || 0, 'กลุ่ม LINE ที่เปิดรับ ' + r.stats.groups + ' กลุ่ม']];
+      var top = (r.top || []).length ? card('<div class="border-b border-slate-200 px-5 py-4 font-display text-[17px] font-semibold">อัลบั้มที่มีคนดูมากที่สุด</div>' +
+        r.top.map(function (a, n) {
+          return '<a href="#album/' + encodeURIComponent(a.id) + '" class="flex items-center gap-4 border-b border-slate-100 px-5 py-3 text-slate-900 last:border-0 hover:bg-slate-50">' +
+            '<span class="flex h-7 w-7 flex-none items-center justify-center rounded-full ' + (n === 0 ? 'bg-amber-400 text-slate-900' : 'bg-slate-100 text-slate-600') + ' text-[13px] font-bold">' + (n + 1) + '</span>' +
+            '<span class="min-w-0 flex-1 truncate font-medium">' + esc(a.title) + '</span><span class="text-sm text-slate-500">' + PR.num(a.views) + ' ครั้ง</span></a>';
+        }).join(''), 'overflow-hidden') : '';
       var stats = '<div class="grid grid-cols-2 gap-3 sm:grid-cols-[repeat(auto-fit,minmax(170px,1fr))] sm:gap-4">' + tiles.map(function (t) {
         return card('<div class="flex flex-col gap-1 px-5 py-4"><span class="text-[13px] text-slate-500">' + t[0] + '</span>' +
           '<span class="font-display text-[28px] font-bold">' + PR.num(t[1]) + '</span>' + (t[2] ? '<span class="text-xs text-slate-500">' + t[2] + '</span>' : '') + '</div>');
@@ -218,7 +225,7 @@
         stats +
         card('<div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 px-5 py-4"><span class="font-display text-[17px] font-semibold">ชุดภาพจาก LINE</span>' +
           '<span class="text-[13px] text-slate-500">ภาพที่ส่งพร้อมกัน หรือส่งติดกันภายใน 5 นาที รวมเป็น 1 ชุด</span></div>' + list, 'overflow-hidden') +
-        '</div>';
+        top + '</div>';
     }).catch(loadError);
   }
 
@@ -281,7 +288,7 @@
       return '<a href="#album/' + encodeURIComponent(a.id) + '" class="flex flex-wrap items-center gap-4 border-b border-slate-100 px-5 py-3.5 text-slate-900 last:border-0 hover:bg-slate-50">' +
         thumb(a.cover, 56) +
         '<div class="flex min-w-[180px] flex-1 flex-col gap-1"><span class="font-semibold">' + esc(a.title) + '</span>' +
-        '<span class="flex flex-wrap items-center gap-2 text-[13px] text-slate-500">' + (a.category ? PR.catBadge(a.category, a.color) : '<span>ไม่ระบุหมวด</span>') + '<span>' + PR.num(a.count) + ' ภาพ</span><span>อัปเดต ' + PR.thaiDate(a.updated) + '</span></span></div>' +
+        '<span class="flex flex-wrap items-center gap-2 text-[13px] text-slate-500">' + (a.category ? PR.catBadge(a.category, a.color) : '<span>ไม่ระบุหมวด</span>') + '<span>' + PR.num(a.count) + ' ภาพ</span><span>เข้าชม ' + PR.num(a.views) + ' ครั้ง</span><span>อัปเดต ' + PR.thaiDate(a.updated) + '</span></span></div>' +
         statusPill(a.status) +
         '<span class="text-sm font-semibold text-teal-700">แก้ไข →</span></a>';
     }).join('') : '<div class="px-5 py-12 text-center text-slate-500">' + (S.albums.length ? 'ไม่พบอัลบั้มที่ตรงกับคำค้น' : 'ยังไม่มีอัลบั้ม') + '</div>';
@@ -358,13 +365,14 @@
         '<img src="' + PR.thumb(p.file_id, 320) + '" alt="" loading="lazy" referrerpolicy="no-referrer" class="absolute inset-0 h-full w-full object-cover" onerror="this.style.display=\'none\'">' +
         (p.file_id === a.cover ? '<span class="absolute left-2 top-2 rounded-full bg-amber-400 px-2 py-0.5 text-[11px] font-bold text-slate-900">ภาพปก</span>' : '') +
         (off ? '<span class="absolute bottom-2 left-2 rounded-full bg-slate-900/80 px-2 py-0.5 text-[11px] font-semibold text-white">ซ่อนอยู่</span>' : '') +
+        (p.type === 'video' ? '<span class="absolute bottom-2 right-2 rounded-full bg-slate-900/80 px-2 py-0.5 text-[11px] font-semibold text-white">▶ คลิป</span>' : '') +
         (isSel ? '<span class="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-teal-700 text-white"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"></path></svg></span>' : '') +
         '</button>';
     }).join('') + '</div>' : '<div class="py-10 text-center text-sm text-slate-500">ไม่มีภาพในตัวกรองนี้</div>';
 
     V.innerHTML = '<div class="flex flex-col gap-6">' +
       '<a href="#albums" class="self-start text-sm font-medium text-teal-700 hover:text-teal-800">← อัลบั้มทั้งหมด</a>' +
-      heading(esc(a.title) + ' ' + statusPill(a.status), PR.num(a.count) + ' ภาพบนเว็บ · สร้างโดย ' + esc(a.created_by || '-'), actions) +
+      heading(esc(a.title) + ' ' + statusPill(a.status), PR.num(a.count) + ' ภาพบนเว็บ · เข้าชม ' + PR.num(a.views) + ' ครั้ง · สร้างโดย ' + esc(a.created_by || '-'), actions) +
       form +
       card('<div class="flex flex-col gap-4 p-5"><div class="flex flex-wrap items-center justify-between gap-3"><span class="font-display text-[17px] font-semibold">ภาพในอัลบั้ม</span>' +
         '<div class="flex gap-1 rounded-xl bg-slate-100 p-1">' + filters + '</div></div>' + bar + grid + '</div>') +
@@ -501,6 +509,61 @@
     });
   }
 
+  /* ================= ตั้งค่าบอท ================= */
+  function viewSettings() {
+    loading();
+    call('settings').then(function (r) {
+      var st = r.settings;
+      var hours = '';
+      for (var h = 6; h <= 21; h++) hours += '<option value="' + h + '"' + (h === st.hour ? ' selected' : '') + '>' + (h < 10 ? '0' : '') + h + ':00 น.</option>';
+      var row = function (id, title, desc, on) {
+        return '<div class="flex items-center justify-between gap-4 border-b border-slate-100 px-5 py-4 last:border-0">' +
+          '<div class="flex flex-col gap-0.5"><label for="' + id + '" class="font-semibold">' + title + '</label><span class="text-[13px] leading-[1.6] text-slate-500">' + desc + '</span></div>' +
+          '<label class="switch"><input type="checkbox" id="' + id + '"' + (on ? ' checked' : '') + '><span></span></label></div>';
+      };
+      V.innerHTML = '<div class="flex flex-col gap-6">' +
+        heading('ตั้งค่าบอท', 'การทำงานของ PR Bot ในกลุ่ม LINE') +
+        card(row('s-reply', 'ตอบกลับในกลุ่มทุกครั้งที่ได้รับภาพ', 'ปิดแล้วบอทจะรับภาพเงียบๆ ภาพที่ยังไม่ระบุอัลบั้มจะรอแอดมินจัดในหน้านี้ ส่วนปุ่มและคำสั่งยังตอบตามปกติ', st.reply) +
+          row('s-summary', 'ส่งสรุปภาพประจำวันเข้ากลุ่ม', 'ส่งเฉพาะวันที่มีภาพเข้ามา 1 ข้อความต่อกลุ่ม (นับโควตาข้อความของ LINE OA)', st.summary) +
+          '<div class="flex flex-wrap items-center justify-between gap-4 px-5 py-4"><div class="flex flex-col gap-0.5"><label for="s-hour" class="font-semibold">เวลาส่งสรุป</label>' +
+          '<span class="text-[13px] text-slate-500">ส่งในช่วงต้นชั่วโมงที่เลือก</span></div>' +
+          '<select id="s-hour" class="h-11 rounded-xl border border-slate-300 bg-white px-3 text-sm">' + hours + '</select></div>', 'overflow-hidden') +
+        (st.summary && !st.trigger ? '<div class="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm leading-[1.7] text-amber-900"><b>ยังไม่ได้ติดตั้งตัวตั้งเวลา</b> — เปิด Apps Script แล้วรันฟังก์ชัน <code>installTriggers</code> 1 ครั้ง สรุปจึงจะส่งตามเวลา</div>' : '') +
+        '<div class="flex flex-wrap justify-end gap-2">' + btn('ดูตัวอย่างสรุปวันนี้', 'previewSummary') + btn('บันทึกการตั้งค่า', 'saveSettings', 'primary') + '</div>' +
+        card('<div class="flex flex-col gap-1 px-5 py-4 text-sm leading-[1.7] text-slate-600"><span class="font-semibold text-slate-900">ข้อมูลระบบ</span>' +
+          '<span>ที่อยู่เว็บ (WEB_URL): ' + (st.web_url ? esc(st.web_url) : '<span class="text-rose-600">ยังไม่ได้ตั้ง</span>') + '</span>' +
+          '<span>ตัวตั้งเวลาสรุปประจำวัน: ' + (st.trigger ? 'ติดตั้งแล้ว' : 'ยังไม่ติดตั้ง') + '</span>' +
+          '<span>ส่งสรุปล่าสุด: ' + (st.last_summary ? esc(st.last_summary.replace(/(\d{4})(\d{2})(\d{2})/, '$3/$2/$1')) : '-') + '</span></div>') +
+        '</div>';
+    }).catch(loadError);
+  }
+
+  function saveSettings() {
+    busy();
+    call('saveSettings', { reply: el('s-reply').checked, summary: el('s-summary').checked, hour: Number(el('s-hour').value) }).then(function (r) {
+      if (r.warning) {
+        PR.swal.fire({ icon: 'warning', title: 'บันทึกแล้ว แต่ยังขาดอีก 1 ขั้น', text: r.warning, confirmButtonText: 'เข้าใจแล้ว' });
+      } else {
+        ok('บันทึกการตั้งค่าแล้ว');
+      }
+      viewSettings();
+    }).catch(fail);
+  }
+
+  function previewSummary() {
+    busy('กำลังสร้างตัวอย่าง…');
+    call('previewSummary').then(function (r) {
+      PR.swal.fire({
+        title: 'ตัวอย่างสรุปวันนี้',
+        html: r.items.length ? r.items.map(function (it) {
+          return '<div style="text-align:left;margin-top:10px"><div style="font-size:12px;font-weight:600;color:#0F766E">' + esc(it.group) + '</div>' +
+            '<div style="white-space:pre-line;background:#F1F5F9;border-radius:12px;padding:12px 14px;margin-top:4px;font-size:13px;line-height:1.7;color:#0F172A">' + esc(it.text) + '</div></div>';
+        }).join('') : 'วันนี้ยังไม่มีภาพเข้ากลุ่มที่เปิดรับ จึงไม่มีสรุปให้ส่ง',
+        confirmButtonText: 'ปิด'
+      });
+    }).catch(fail);
+  }
+
   /* ---------- จับการคลิกทั้งหน้า ---------- */
   V.addEventListener('click', function (e) {
     var t = e.target.closest('[data-act]');
@@ -538,6 +601,8 @@
           call('deleteCategory', { id: id }).then(function () { ok('ลบหมวดแล้ว'); viewCategories(); }).catch(fail);
         });
     }
+    if (act === 'saveSettings') return saveSettings();
+    if (act === 'previewSummary') return previewSummary();
     if (act === 'userNew') return editUser(null);
     if (act === 'userEdit') return editUser(S.users[Number(t.getAttribute('data-i'))]);
   });
