@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>คลังภาพประชาสัมพันธ์ – โรงเรียนบ้านละลม</title>
+<meta name="description" content="รวมภาพกิจกรรมและประชาสัมพันธ์ของโรงเรียนบ้านละลม สพป.ศรีสะเกษ เขต 3 อัปเดตอัตโนมัติจากกลุ่ม LINE">
+<meta property="og:title" content="คลังภาพประชาสัมพันธ์ – โรงเรียนบ้านละลม">
+<meta property="og:description" content="รวมภาพกิจกรรมของโรงเรียน เปิดดู ดาวน์โหลด และแชร์ได้">
+<link rel="icon" href="https://img2.pic.in.th/pic/Logo-7aecb8e321ff2955.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anuphan:wght@400;500;600;700&amp;family=Noto+Sans+Thai:wght@400;500;600&amp;display=swap">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = { theme: { extend: { fontFamily: { sans: ['"Noto Sans Thai"', 'system-ui', 'sans-serif'], display: ['Anuphan', '"Noto Sans Thai"', 'sans-serif'] } } } };
+</script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body class="bg-slate-50 text-slate-900 antialiased">
+
+<header class="sticky top-0 z-30 border-b border-slate-200 bg-white/85 backdrop-blur">
+  <div class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-6 py-3.5">
+    <a href="index.html" class="flex items-center gap-3 text-slate-900 no-underline">
+      <img src="https://img2.pic.in.th/pic/Logo-7aecb8e321ff2955.png" alt="ตราโรงเรียนบ้านละลม" class="h-11 w-11 rounded-xl bg-white object-contain p-0.5 ring-1 ring-slate-200">
+      <span class="flex flex-col">
+        <span class="font-display text-lg font-bold tracking-tight">คลังภาพประชาสัมพันธ์</span>
+        <span class="text-[13px] text-slate-500">โรงเรียนบ้านละลม · สพป.ศรีสะเกษ เขต 3</span>
+      </span>
+    </a>
+    <nav aria-label="เมนูหลัก" class="flex flex-wrap items-center gap-1">
+      <a href="index.html" class="rounded-[10px] bg-teal-50 px-3.5 py-2.5 text-[15px] font-semibold text-teal-800">อัลบั้มทั้งหมด</a>
+      <a href="#albums" class="rounded-[10px] px-3.5 py-2.5 text-[15px] text-slate-700 hover:bg-slate-100">อัลบั้มล่าสุด</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <section class="mx-auto flex max-w-6xl flex-wrap items-center gap-12 px-6 pb-10 pt-14">
+    <div class="flex min-w-0 flex-[1_1_520px] flex-col gap-5">
+      <div id="live" class="inline-flex items-center gap-2 self-start rounded-full border border-slate-200 bg-white py-1.5 pl-2 pr-3 text-[13px] text-slate-700 shadow-sm">
+        <span class="inline-flex items-center gap-1.5 rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-800"><span class="h-1.5 w-1.5 rounded-full bg-green-600"></span>LIVE</span>
+        <span id="live-text">กำลังโหลด…</span>
+      </div>
+      <h1 class="font-display text-4xl font-bold leading-tight tracking-tight sm:text-5xl">ทุกภาพกิจกรรมของโรงเรียน<br><span class="text-teal-700">รวมไว้ในที่เดียว</span></h1>
+      <p class="max-w-xl text-[17px] leading-relaxed text-slate-600">ครูส่งรูปลงกลุ่ม LINE บอทจะจัดเข้าอัลบั้มให้ทันที ผู้ปกครองและชุมชนเปิดดู ดาวน์โหลด และแชร์ได้จากหน้านี้</p>
+      <form id="search-form" class="mt-1 flex flex-wrap items-center gap-2.5" role="search">
+        <label for="q" class="sr-only">ค้นหาอัลบั้ม</label>
+        <div class="flex h-14 min-w-0 max-w-[460px] flex-[1_1_320px] items-center gap-2.5 rounded-[14px] border border-slate-300 bg-white pl-4 pr-1.5 shadow-sm focus-within:border-teal-500 focus-within:ring-4 focus-within:ring-teal-500/15">
+          <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>
+          <input id="q" type="search" placeholder="ค้นหา เช่น กีฬาสี, ไหว้ครู" class="min-w-0 flex-1 border-0 bg-transparent text-base text-slate-900 outline-none" autocomplete="off">
+          <button type="submit" class="h-11 rounded-[10px] bg-teal-700 px-4 text-[15px] font-semibold text-white hover:bg-teal-800">ค้นหา</button>
+        </div>
+        <label for="year" class="sr-only">ปีการศึกษา</label>
+        <select id="year" class="h-14 rounded-[14px] border border-slate-300 bg-white px-3.5 text-[15px] text-slate-900">
+          <option value="">ทุกปีการศึกษา</option>
+        </select>
+      </form>
+      <dl class="mt-2 flex flex-wrap gap-8">
+        <div class="flex flex-col-reverse"><dt class="text-[13px] text-slate-500">อัลบั้ม</dt><dd id="st-albums" class="font-display text-[28px] font-bold">–</dd></div>
+        <div class="flex flex-col-reverse"><dt class="text-[13px] text-slate-500">ภาพ</dt><dd id="st-photos" class="font-display text-[28px] font-bold">–</dd></div>
+        <div class="flex flex-col-reverse"><dt class="text-[13px] text-slate-500">ครูที่ร่วมส่งภาพ</dt><dd id="st-senders" class="font-display text-[28px] font-bold">–</dd></div>
+      </dl>
+    </div>
+
+    <div id="collage" class="relative h-[300px] min-w-0 sm:h-[380px] flex-[1_1_400px]" aria-hidden="true">
+      <div class="absolute left-0 top-0 h-[62%] w-[58%] overflow-hidden rounded-3xl bg-emerald-100 shadow-lg shadow-slate-900/5" data-slot="0"></div>
+      <div class="absolute right-0 top-6 h-[44%] w-[38%] overflow-hidden rounded-3xl bg-amber-100 shadow-lg shadow-slate-900/5" data-slot="1"></div>
+      <div class="absolute bottom-0 right-0 h-[46%] w-[38%] overflow-hidden rounded-3xl bg-sky-100 shadow-lg shadow-slate-900/5" data-slot="2"></div>
+      <div class="absolute bottom-0 left-0 h-[32%] w-[58%] overflow-hidden rounded-3xl bg-rose-100 shadow-lg shadow-slate-900/5" data-slot="3"></div>
+      <div id="float-card" class="absolute left-4 right-4 top-1/2 hidden items-center sm:left-[30%] sm:right-auto sm:w-[260px] gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3.5 shadow-xl">
+        <div class="flex h-10 w-10 flex-none items-center justify-center rounded-xl bg-teal-50 text-teal-700">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 1 1-3.2-6.4"></path><path d="M21 4v5h-5"></path></svg>
+        </div>
+        <div class="flex min-w-0 flex-col">
+          <span class="text-sm font-semibold">อัปเดตล่าสุดจาก LINE</span>
+          <span id="float-text" class="truncate text-xs text-slate-500"></span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="albums" class="mx-auto flex max-w-6xl scroll-mt-24 flex-col gap-6 px-6 pb-14 pt-2">
+    <div class="flex flex-wrap items-center justify-between gap-4">
+      <h2 id="list-title" class="font-display text-[26px] font-bold tracking-tight">อัลบั้มล่าสุด</h2>
+      <div id="chips" role="group" aria-label="หมวดหมู่" class="no-scrollbar flex max-w-full gap-1.5 overflow-x-auto rounded-[14px] bg-slate-100 p-1"></div>
+    </div>
+    <div id="grid" class="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-6">
+      <div class="h-[316px] animate-pulse rounded-[20px] bg-slate-200/70"></div>
+      <div class="h-[316px] animate-pulse rounded-[20px] bg-slate-200/70"></div>
+      <div class="h-[316px] animate-pulse rounded-[20px] bg-slate-200/70"></div>
+    </div>
+    <button id="more" type="button" class="hidden h-12 self-center rounded-xl border border-slate-300 bg-white px-7 text-[15px] font-medium shadow-sm hover:bg-slate-50">ดูอัลบั้มเพิ่ม</button>
+  </section>
+</main>
+
+<footer class="border-t border-slate-200 bg-white">
+  <div class="mx-auto flex max-w-6xl flex-wrap justify-between gap-3 px-6 py-6 text-[13px] text-slate-500">
+    <span>พัฒนาโดย นายชิติพัทธ์ นิลวรรณ ตำแหน่ง ครู โรงเรียนบ้านละลม สพป.ศรีสะเกษ เขต 3</span>
+    <span>ภาพทั้งหมดใช้เพื่อการประชาสัมพันธ์ของโรงเรียน</span>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="config.js"></script>
+<script src="common.js"></script>
+<script>
+(function () {
+  var state = { data: null, cat: '', year: '', q: '', shown: PR.config.PAGE_SIZE || 12 };
+  var grid = document.getElementById('grid');
+  var more = document.getElementById('more');
+
+  function el(id) { return document.getElementById(id); }
+
+  function cardHtml(a, i) {
+    var t = PR.tone(i);
+    var cover = a.cover
+      ? '<img src="' + PR.thumb(a.cover, 640) + '" alt="" loading="lazy" referrerpolicy="no-referrer" class="absolute inset-0 h-full w-full object-cover" onerror="this.style.display=\'none\'">'
+      : '';
+    var fresh = PR.isRecent(a.updated, 48)
+      ? '<span class="absolute right-3 top-3 rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-teal-800 shadow-sm">ใหม่จาก LINE</span>'
+      : '';
+    return '<a href="album.html?id=' + encodeURIComponent(a.id) + '" class="card flex flex-col overflow-hidden rounded-[20px] border border-slate-200 bg-white text-slate-900 shadow-sm">' +
+      '<div class="relative flex h-[200px] items-center justify-center" style="background:' + t[0] + '">' + PR.photoIcon(t[1], 52) + cover +
+        '<span class="absolute bottom-3 left-3 inline-flex items-center gap-1.5 rounded-full bg-slate-900/75 px-2.5 py-1 text-xs font-medium text-white backdrop-blur">' + PR.num(a.count) + ' ภาพ</span>' + fresh +
+      '</div>' +
+      '<div class="flex flex-col gap-2 px-5 pb-5 pt-4">' +
+        PR.catBadge(a.category, a.color) +
+        '<span class="font-display text-lg font-semibold leading-snug line-clamp-2">' + PR.esc(a.title) + '</span>' +
+        '<div class="flex items-center justify-between text-[13px] text-slate-500"><span>' + PR.thaiDate(a.date) + '</span><span class="font-semibold text-teal-700">ดูอัลบั้ม →</span></div>' +
+      '</div></a>';
+  }
+
+  function filtered() {
+    var q = state.q.toLowerCase();
+    return state.data.albums.filter(function (a) {
+      if (state.cat && a.category_id !== state.cat) return false;
+      if (state.year && String(a.year) !== state.year) return false;
+      if (q && (a.title + ' ' + a.description + ' ' + a.category).toLowerCase().indexOf(q) === -1) return false;
+      return true;
+    });
+  }
+
+  function renderGrid() {
+    var list = filtered();
+    if (!list.length) {
+      grid.innerHTML = '<div class="col-span-full rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-14 text-center">' +
+        '<div class="font-display text-lg font-semibold">ไม่พบอัลบั้ม</div>' +
+        '<p class="mt-1 text-sm text-slate-500">' + (state.data.albums.length ? 'ลองเปลี่ยนคำค้นหรือหมวดหมู่' : 'ยังไม่มีอัลบั้ม ภาพจะขึ้นที่นี่เมื่อครูส่งรูปเข้ากลุ่ม LINE') + '</p></div>';
+      more.classList.add('hidden');
+      return;
+    }
+    grid.innerHTML = list.slice(0, state.shown).map(cardHtml).join('');
+    more.classList.toggle('hidden', list.length <= state.shown);
+    el('list-title').textContent = (state.q || state.cat || state.year) ? 'พบ ' + list.length + ' อัลบั้ม' : 'อัลบั้มล่าสุด';
+  }
+
+  function renderChips() {
+    var used = {};
+    state.data.albums.forEach(function (a) { if (a.category_id) used[a.category_id] = true; });
+    var cats = [{ id: '', name: 'ทั้งหมด' }].concat(state.data.categories.filter(function (c) { return used[c.id]; }));
+    el('chips').innerHTML = cats.map(function (c) {
+      var on = c.id === state.cat;
+      return '<button type="button" data-cat="' + PR.esc(c.id) + '" aria-pressed="' + on + '" class="h-[38px] flex-none whitespace-nowrap rounded-[10px] px-3.5 text-sm ' +
+        (on ? 'bg-white font-semibold text-slate-900 shadow' : 'text-slate-600 hover:text-slate-900') + '">' + PR.esc(c.name) + '</button>';
+    }).join('');
+  }
+
+  function renderYears() {
+    var years = [];
+    state.data.albums.forEach(function (a) { if (years.indexOf(a.year) === -1) years.push(a.year); });
+    years.sort(function (x, y) { return y - x; });
+    el('year').innerHTML = '<option value="">ทุกปีการศึกษา</option>' + years.map(function (y) {
+      return '<option value="' + y + '"' + (String(y) === state.year ? ' selected' : '') + '>ปีการศึกษา ' + y + '</option>';
+    }).join('');
+  }
+
+  function renderHero() {
+    var d = state.data;
+    el('st-albums').textContent = PR.num(d.stats.albums);
+    el('st-photos').textContent = PR.num(d.stats.photos);
+    el('st-senders').textContent = PR.num(d.stats.senders);
+    el('live-text').textContent = d.lastSync ? 'ซิงค์จากกลุ่ม LINE · ล่าสุด ' + PR.timeAgo(d.lastSync) : 'ซิงค์จากกลุ่ม LINE อัตโนมัติ';
+    var covers = d.albums.filter(function (a) { return a.cover; }).slice(0, 4);
+    covers.forEach(function (a, i) {
+      var slot = document.querySelector('#collage [data-slot="' + i + '"]');
+      if (slot) slot.innerHTML = '<img src="' + PR.thumb(a.cover, 800) + '" alt="" referrerpolicy="no-referrer" class="h-full w-full object-cover" onerror="this.remove()">';
+    });
+    if (d.albums.length) {
+      el('float-text').textContent = d.albums[0].title + ' · ' + PR.timeAgo(d.albums[0].updated);
+      el('float-card').classList.remove('hidden');
+      el('float-card').classList.add('flex');
+    }
+  }
+
+  function renderAll() {
+    renderHero();
+    renderYears();
+    renderChips();
+    renderGrid();
+  }
+
+  function showError() {
+    grid.innerHTML = '<div class="col-span-full rounded-2xl border border-rose-200 bg-rose-50 px-6 py-10 text-center text-rose-900">' +
+      '<div class="font-display text-lg font-semibold">โหลดข้อมูลไม่สำเร็จ</div>' +
+      '<p class="mt-1 text-sm">ตรวจการเชื่อมต่ออินเทอร์เน็ต แล้วลองใหม่อีกครั้ง</p>' +
+      '<button type="button" id="retry" class="pr-btn pr-btn-primary mt-4">ลองใหม่</button></div>';
+    el('live-text').textContent = 'เชื่อมต่อไม่สำเร็จ';
+    el('retry').onclick = load;
+  }
+
+  function load() {
+    if (!PR.configured()) { grid.innerHTML = PR.notConfiguredHtml(); el('live-text').textContent = 'ยังไม่ได้ตั้งค่า'; return; }
+    var cached = PR.store.get('pr_home');
+    if (cached && cached.ok) { state.data = cached; renderAll(); }
+    PR.api({ action: 'home' }).then(function (d) {
+      if (!d || !d.ok) throw new Error((d && d.error) || 'bad');
+      PR.store.set('pr_home', d);
+      state.data = d;
+      renderAll();
+    }).catch(function () {
+      if (!state.data) showError();
+    });
+  }
+
+  var timer = null;
+  el('q').addEventListener('input', function () {
+    clearTimeout(timer);
+    timer = setTimeout(function () {
+      state.q = el('q').value.trim();
+      state.shown = PR.config.PAGE_SIZE || 12;
+      if (state.data) renderGrid();
+    }, 200);
+  });
+  el('search-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    state.q = el('q').value.trim();
+    if (state.data) renderGrid();
+    document.getElementById('albums').scrollIntoView({ behavior: 'smooth' });
+  });
+  el('year').addEventListener('change', function () {
+    state.year = el('year').value;
+    state.shown = PR.config.PAGE_SIZE || 12;
+    if (state.data) renderGrid();
+  });
+  el('chips').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-cat]');
+    if (!b) return;
+    state.cat = b.getAttribute('data-cat');
+    state.shown = PR.config.PAGE_SIZE || 12;
+    renderChips();
+    renderGrid();
+  });
+  more.addEventListener('click', function () {
+    state.shown += PR.config.PAGE_SIZE || 12;
+    renderGrid();
+  });
+
+  load();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,47 @@
+/* styles.css : ส่วนที่ Tailwind ไม่ครอบคลุม — ธีม SweetAlert2, lightbox, hover */
+
+body { font-family: 'Noto Sans Thai', system-ui, sans-serif; }
+.font-display { font-family: 'Anuphan', 'Noto Sans Thai', sans-serif; }
+
+.card { transition: transform .2s ease, box-shadow .2s ease; }
+.card:hover { transform: translateY(-4px); box-shadow: 0 20px 25px -5px rgba(15,23,42,.10), 0 8px 10px -6px rgba(15,23,42,.10); }
+.ph { transition: transform .2s ease, box-shadow .2s ease; }
+.ph:hover { transform: scale(1.02); box-shadow: 0 10px 15px -3px rgba(15,23,42,.15); }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { scrollbar-width: none; }
+
+/* ---------- SweetAlert2 ธีมคลังภาพ ---------- */
+.pr-swal { border-radius: 20px !important; padding: 28px 24px 24px !important; font-family: 'Noto Sans Thai', system-ui, sans-serif !important; box-shadow: 0 25px 50px -12px rgba(15,23,42,.35) !important; }
+.pr-swal-title { font-family: 'Anuphan', 'Noto Sans Thai', sans-serif !important; font-size: 21px !important; font-weight: 700 !important; color: #0F172A !important; padding: 8px 0 0 !important; }
+.pr-swal-text { font-size: 14px !important; line-height: 1.65 !important; color: #475569 !important; margin-top: 8px !important; }
+.pr-swal-actions { gap: 8px; margin-top: 20px !important; }
+.pr-btn { height: 44px; padding: 0 20px; border-radius: 12px; border: 0; font: inherit; font-size: 15px; font-weight: 600; cursor: pointer; }
+.pr-btn-primary { background: #0F766E; color: #fff; box-shadow: 0 4px 6px -1px rgba(15,118,110,.30); }
+.pr-btn-primary:hover { background: #115E59; }
+.pr-btn-ghost { background: #F1F5F9; color: #334155; font-weight: 500; }
+.pr-btn-ghost:hover { background: #E2E8F0; }
+.pr-btn-danger { background: #E11D48; color: #fff; }
+.swal2-icon.swal2-success { border-color: #99F6E4 !important; color: #0F766E !important; }
+.swal2-icon.swal2-success [class^='swal2-success-line'] { background-color: #0F766E !important; }
+.swal2-icon.swal2-success .swal2-success-ring { border-color: rgba(15,118,110,.25) !important; }
+.swal2-icon.swal2-question, .swal2-icon.swal2-info { border-color: #BAE6FD !important; color: #0369A1 !important; }
+.swal2-icon.swal2-warning { border-color: #FDE68A !important; color: #B45309 !important; }
+.swal2-icon.swal2-error { border-color: #FECDD3 !important; color: #BE123C !important; }
+.swal2-icon.swal2-error [class^='swal2-x-mark-line'] { background-color: #BE123C !important; }
+.pr-toast { border-radius: 14px !important; box-shadow: 0 10px 15px -3px rgba(15,23,42,.12), 0 4px 6px -4px rgba(15,23,42,.10) !important; border: 1px solid #E2E8F0 !important; font-family: 'Noto Sans Thai', system-ui, sans-serif !important; }
+.pr-toast .swal2-title { font-size: 14px !important; font-weight: 600 !important; color: #0F172A !important; }
+.swal2-timer-progress-bar { background: #14B8A6 !important; }
+
+/* ---------- Lightbox ---------- */
+.lb { position: fixed; inset: 0; z-index: 60; background: rgba(15,23,42,.94); display: none; flex-direction: column; }
+.lb.open { display: flex; }
+.lb-stage { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; padding: 8px 64px; position: relative; }
+.lb-stage img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 8px; user-select: none; }
+.lb-btn { width: 48px; height: 48px; border-radius: 999px; border: 0; background: rgba(255,255,255,.12); color: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.lb-btn:hover { background: rgba(255,255,255,.22); }
+.lb-prev, .lb-next { position: absolute; top: 50%; transform: translateY(-50%); }
+.lb-prev { left: 12px; } .lb-next { right: 12px; }
+@media (max-width: 640px) {
+  .lb-stage { padding: 8px; }
+  .lb-prev, .lb-next { top: auto; bottom: 12px; transform: none; }
+}

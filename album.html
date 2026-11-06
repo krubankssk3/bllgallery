@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>อัลบั้ม – คลังภาพประชาสัมพันธ์ โรงเรียนบ้านละลม</title>
+<meta name="description" content="อัลบั้มภาพกิจกรรม โรงเรียนบ้านละลม สพป.ศรีสะเกษ เขต 3">
+<link rel="icon" href="https://img2.pic.in.th/pic/Logo-7aecb8e321ff2955.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anuphan:wght@400;500;600;700&amp;family=Noto+Sans+Thai:wght@400;500;600&amp;display=swap">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = { theme: { extend: { fontFamily: { sans: ['"Noto Sans Thai"', 'system-ui', 'sans-serif'], display: ['Anuphan', '"Noto Sans Thai"', 'sans-serif'] } } } };
+</script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body class="bg-slate-50 text-slate-900 antialiased">
+
+<header class="sticky top-0 z-30 border-b border-slate-200 bg-white/85 backdrop-blur">
+  <div class="mx-auto flex max-w-6xl items-center gap-3 px-6 py-3.5">
+    <a href="index.html" class="flex items-center gap-3 text-slate-900">
+      <img src="https://img2.pic.in.th/pic/Logo-7aecb8e321ff2955.png" alt="ตราโรงเรียนบ้านละลม" class="h-10 w-10 rounded-xl bg-white object-contain p-0.5 ring-1 ring-slate-200">
+      <span class="font-display text-[17px] font-bold">คลังภาพประชาสัมพันธ์</span>
+    </a>
+  </div>
+</header>
+
+<main class="mx-auto flex max-w-6xl flex-col gap-5 px-6 pb-14 pt-8">
+  <nav aria-label="breadcrumb" class="flex flex-wrap items-center gap-2 text-sm text-slate-500">
+    <a href="index.html" class="font-medium text-teal-700 hover:text-teal-800">อัลบั้มทั้งหมด</a>
+    <span aria-hidden="true" class="text-slate-300">/</span>
+    <span id="crumb">กำลังโหลด…</span>
+  </nav>
+
+  <section id="head" class="flex flex-wrap items-end justify-between gap-6 rounded-3xl border border-slate-200 bg-white p-7 shadow-sm">
+    <div class="flex w-full max-w-2xl flex-col gap-3">
+      <div class="h-5 w-20 animate-pulse rounded-lg bg-slate-200"></div>
+      <div class="h-9 w-3/4 animate-pulse rounded-lg bg-slate-200"></div>
+      <div class="h-4 w-1/2 animate-pulse rounded-lg bg-slate-100"></div>
+    </div>
+  </section>
+
+  <div id="days" role="group" aria-label="กรองภาพตามวัน" class="no-scrollbar hidden max-w-full gap-1.5 self-start overflow-x-auto rounded-[14px] bg-slate-100 p-1"></div>
+
+  <section aria-label="ภาพในอัลบั้ม">
+    <div id="grid" class="grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] gap-3 sm:grid-cols-[repeat(auto-fill,minmax(220px,1fr))] sm:gap-3.5"></div>
+  </section>
+</main>
+
+<footer class="border-t border-slate-200 bg-white">
+  <div class="mx-auto max-w-6xl px-6 py-6 text-[13px] text-slate-500">พัฒนาโดย นายชิติพัทธ์ นิลวรรณ ตำแหน่ง ครู โรงเรียนบ้านละลม สพป.ศรีสะเกษ เขต 3</div>
+</footer>
+
+<div id="lb" class="lb" role="dialog" aria-modal="true" aria-label="ดูภาพ">
+  <div class="flex items-center justify-between gap-3 px-4 py-3 text-white">
+    <div class="min-w-0">
+      <div id="lb-count" class="text-sm font-semibold"></div>
+      <div id="lb-meta" class="truncate text-xs text-slate-300"></div>
+    </div>
+    <div class="flex items-center gap-2">
+      <a id="lb-dl" class="lb-btn" href="#" target="_blank" rel="noopener" aria-label="ดาวน์โหลดภาพนี้">
+        <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11"></path><path d="M7 10l5 5 5-5"></path><path d="M5 20h14"></path></svg>
+      </a>
+      <button id="lb-close" type="button" class="lb-btn" aria-label="ปิด">
+        <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+      </button>
+    </div>
+  </div>
+  <div class="lb-stage">
+    <img id="lb-img" src="" alt="" referrerpolicy="no-referrer">
+    <button id="lb-prev" type="button" class="lb-btn lb-prev" aria-label="ภาพก่อนหน้า">
+      <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 5l-7 7 7 7"></path></svg>
+    </button>
+    <button id="lb-next" type="button" class="lb-btn lb-next" aria-label="ภาพถัดไป">
+      <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 5l7 7-7 7"></path></svg>
+    </button>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="config.js"></script>
+<script src="common.js"></script>
+<script>
+(function () {
+  var id = PR.param('id');
+  var state = { album: null, photos: [], day: '', view: [], index: 0 };
+  function el(x) { return document.getElementById(x); }
+
+  var ICON = {
+    download: '<svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11"></path><path d="M7 10l5 5 5-5"></path><path d="M5 20h14"></path></svg>',
+    share: '<svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="2.5"></circle><circle cx="6" cy="12" r="2.5"></circle><circle cx="18" cy="19" r="2.5"></circle><path d="M8.2 10.8l7.6-4.4M8.2 13.2l7.6 4.4"></path></svg>',
+    qr: '<svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"></rect><rect x="14" y="3" width="7" height="7" rx="1"></rect><rect x="3" y="14" width="7" height="7" rx="1"></rect><path d="M14 14h3v3h-3zM20 14v.01M14 20h.01M17 20h4v-3"></path></svg>'
+  };
+  var AVATAR = ['#0F766E', '#F59E0B', '#0EA5E9', '#8B5CF6', '#E11D48'];
+
+  function renderHead() {
+    var a = state.album;
+    document.title = a.title + ' – คลังภาพประชาสัมพันธ์ โรงเรียนบ้านละลม';
+    el('crumb').textContent = a.category || 'อัลบั้ม';
+    var avatars = a.senders.slice(0, 3).map(function (n, i) {
+      return '<span title="' + PR.esc(n) + '" class="flex h-7 w-7 items-center justify-center rounded-full border-2 border-white text-[11px] font-semibold text-white' + (i ? ' -ml-2' : '') + '" style="background:' + AVATAR[i % AVATAR.length] + '">' + PR.esc(PR.initial(n)) + '</span>';
+    }).join('');
+    var who = a.senders.length ? 'ส่งจาก LINE โดย ' + PR.esc(a.senders[0]) + (a.senders.length > 1 ? ' และอีก ' + (a.senders.length - 1) + ' คน' : '') : 'ส่งจาก LINE';
+    el('head').innerHTML =
+      '<div class="flex max-w-2xl flex-col gap-3">' +
+        PR.catBadge(a.category, a.color) +
+        '<h1 class="font-display text-3xl font-bold leading-tight tracking-tight sm:text-4xl">' + PR.esc(a.title) + '</h1>' +
+        (a.description ? '<p class="text-base leading-relaxed text-slate-600">' + PR.esc(a.description) + '</p>' : '') +
+        '<div class="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-slate-500">' +
+          (avatars ? '<span class="flex items-center">' + avatars + '</span>' : '') +
+          '<span>' + who + '</span><span class="text-slate-300">•</span>' +
+          '<span>' + PR.num(a.count) + ' ภาพ</span><span class="text-slate-300">•</span>' +
+          '<span>อัปเดต ' + PR.thaiDate(a.updated) + ' · ' + PR.thaiTime(a.updated) + '</span>' +
+        '</div>' +
+      '</div>' +
+      '<div class="flex flex-wrap gap-2.5">' +
+        '<button id="btn-dl" type="button" class="flex h-12 items-center gap-2 rounded-xl bg-teal-700 px-5 text-[15px] font-semibold text-white shadow-md shadow-teal-700/30 hover:bg-teal-800">' + ICON.download + 'ดาวน์โหลดทั้งอัลบั้ม</button>' +
+        '<button id="btn-share" type="button" class="flex h-12 items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 text-[15px] hover:bg-slate-50">' + ICON.share + 'แชร์</button>' +
+        '<button id="btn-qr" type="button" aria-label="แสดง QR Code" class="flex h-12 w-12 items-center justify-center rounded-xl border border-slate-300 bg-white hover:bg-slate-50">' + ICON.qr + '</button>' +
+      '</div>';
+
+    var url = PR.albumUrl(a.id);
+    el('btn-share').onclick = function () { PR.share(a.title, url); };
+    el('btn-qr').onclick = function () { PR.qr(a.title, url); };
+    el('btn-dl').onclick = function () {
+      if (!a.folder) return;
+      PR.swal.fire({
+        icon: 'question',
+        title: 'ดาวน์โหลดทั้งอัลบั้ม?',
+        html: PR.num(a.count) + ' ภาพ ระบบจะเปิดโฟลเดอร์ Google Drive ของอัลบั้มนี้<br>กดปุ่ม “ดาวน์โหลด” มุมขวาบนของ Drive เพื่อรับไฟล์ .zip',
+        showCancelButton: true,
+        confirmButtonText: 'เปิดโฟลเดอร์',
+        cancelButtonText: 'ยกเลิก'
+      }).then(function (r) { if (r.isConfirmed) window.open(a.folder, '_blank', 'noopener'); });
+    };
+  }
+
+  function renderDays() {
+    var keys = [];
+    var count = {};
+    state.photos.forEach(function (p) {
+      var k = PR.dayKey(p.at);
+      if (!count[k]) { count[k] = 0; keys.push(k); }
+      count[k]++;
+    });
+    var box = el('days');
+    if (keys.length < 2) { box.classList.add('hidden'); box.classList.remove('flex'); return; }
+    box.classList.remove('hidden');
+    box.classList.add('flex');
+    var items = [{ k: '', label: 'ทั้งหมด' }].concat(keys.map(function (k) {
+      return { k: k, label: PR.thaiDate(k + 'T12:00:00+07:00', false) + ' (' + count[k] + ')' };
+    }));
+    box.innerHTML = items.map(function (it) {
+      var on = it.k === state.day;
+      return '<button type="button" data-day="' + it.k + '" aria-pressed="' + on + '" class="h-[38px] flex-none whitespace-nowrap rounded-[10px] px-3.5 text-sm ' +
+        (on ? 'bg-white font-semibold text-slate-900 shadow' : 'text-slate-600 hover:text-slate-900') + '">' + PR.esc(it.label) + '</button>';
+    }).join('');
+  }
+
+  function renderGrid() {
+    state.view = state.photos.filter(function (p) { return !state.day || PR.dayKey(p.at) === state.day; });
+    if (!state.view.length) {
+      el('grid').innerHTML = '<div class="col-span-full rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-14 text-center text-slate-500">ยังไม่มีภาพในอัลบั้มนี้</div>';
+      return;
+    }
+    el('grid').innerHTML = state.view.map(function (p, i) {
+      var t = PR.tone(i * 5);
+      var fresh = PR.isRecent(p.at, 24) ? '<span class="absolute left-2.5 top-2.5 rounded-full bg-white px-2 py-0.5 text-xs font-semibold text-teal-800 shadow-sm">ใหม่</span>' : '';
+      return '<button type="button" data-i="' + i + '" aria-label="เปิดดูภาพที่ ' + (i + 1) + '" class="ph relative flex aspect-[4/3] items-center justify-center overflow-hidden rounded-2xl" style="background:' + t[0] + ';cursor:zoom-in">' +
+        PR.photoIcon(t[1], 40) +
+        '<img src="' + PR.thumb(p.id, 480) + '" alt="" loading="lazy" referrerpolicy="no-referrer" class="absolute inset-0 h-full w-full object-cover" onerror="this.style.display=\'none\'">' +
+        fresh + '</button>';
+    }).join('');
+  }
+
+  /* ---------- Lightbox ---------- */
+  function openLb(i) {
+    state.index = i;
+    showLb();
+    el('lb').classList.add('open');
+    document.body.style.overflow = 'hidden';
+    el('lb-close').focus();
+  }
+  function closeLb() {
+    el('lb').classList.remove('open');
+    document.body.style.overflow = '';
+    el('lb-img').src = '';
+  }
+  function showLb() {
+    var n = state.view.length;
+    var p = state.view[state.index];
+    el('lb-img').src = PR.thumb(p.id, 1600);
+    el('lb-img').alt = state.album.title + ' ภาพที่ ' + (state.index + 1);
+    el('lb-count').textContent = (state.index + 1) + ' / ' + n;
+    el('lb-meta').textContent = (p.sender ? 'ส่งโดย ' + p.sender + ' · ' : '') + PR.thaiDate(p.at) + ' ' + PR.thaiTime(p.at);
+    el('lb-dl').href = PR.downloadUrl(p.id);
+    el('lb-prev').style.visibility = n > 1 ? 'visible' : 'hidden';
+    el('lb-next').style.visibility = n > 1 ? 'visible' : 'hidden';
+    if (state.index + 1 < n) { var pre = new Image(); pre.src = PR.thumb(state.view[state.index + 1].id, 1600); }
+  }
+  function step(d) {
+    var n = state.view.length;
+    state.index = (state.index + d + n) % n;
+    showLb();
+  }
+
+  el('grid').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-i]');
+    if (b) openLb(Number(b.getAttribute('data-i')));
+  });
+  el('days').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-day]');
+    if (!b) return;
+    state.day = b.getAttribute('data-day');
+    renderDays();
+    renderGrid();
+  });
+  el('lb-close').onclick = closeLb;
+  el('lb-prev').onclick = function () { step(-1); };
+  el('lb-next').onclick = function () { step(1); };
+  el('lb').addEventListener('click', function (e) {
+    if (e.target === el('lb') || e.target.className === 'lb-stage') closeLb();
+  });
+  document.addEventListener('keydown', function (e) {
+    if (!el('lb').classList.contains('open')) return;
+    if (e.key === 'Escape') closeLb();
+    else if (e.key === 'ArrowLeft') step(-1);
+    else if (e.key === 'ArrowRight') step(1);
+  });
+  var touchX = null;
+  el('lb').addEventListener('touchstart', function (e) { touchX = e.touches[0].clientX; }, { passive: true });
+  el('lb').addEventListener('touchend', function (e) {
+    if (touchX === null) return;
+    var dx = e.changedTouches[0].clientX - touchX;
+    touchX = null;
+    if (Math.abs(dx) > 50) step(dx < 0 ? 1 : -1);
+  });
+
+  function renderAll(d) {
+    state.album = d.album;
+    state.photos = d.photos;
+    renderHead();
+    renderDays();
+    renderGrid();
+  }
+
+  function showMessage(title, text) {
+    el('crumb').textContent = title;
+    el('head').innerHTML = '<div class="flex flex-col gap-2"><h1 class="font-display text-2xl font-bold">' + PR.esc(title) + '</h1>' +
+      '<p class="text-slate-600">' + text + '</p><a href="index.html" class="mt-2 self-start font-semibold text-teal-700">← กลับไปหน้าอัลบั้มทั้งหมด</a></div>';
+    el('grid').innerHTML = '';
+  }
+
+  function load() {
+    if (!PR.configured()) { el('head').innerHTML = PR.notConfiguredHtml(); return; }
+    if (!id) { showMessage('ไม่พบอัลบั้ม', 'ลิงก์นี้ไม่มีรหัสอัลบั้ม'); return; }
+    var key = 'pr_album_' + id;
+    var cached = PR.store.get(key);
+    if (cached && cached.ok) renderAll(cached);
+    PR.api({ action: 'album', id: id }).then(function (d) {
+      if (d && d.ok) { PR.store.set(key, d); renderAll(d); return; }
+      if (d && d.error === 'not_found') { showMessage('ไม่พบอัลบั้ม', 'อัลบั้มนี้อาจถูกซ่อนหรือย้ายไปแล้ว'); return; }
+      throw new Error('bad');
+    }).catch(function () {
+      if (!state.album) showMessage('โหลดข้อมูลไม่สำเร็จ', 'ตรวจการเชื่อมต่ออินเทอร์เน็ต แล้วลองใหม่อีกครั้ง');
+    });
+  }
+
+  load();
+})();
+</script>
+</body>
+</html>
