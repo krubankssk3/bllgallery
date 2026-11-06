@@ -127,6 +127,74 @@
     return s.charAt(0) || '?';
   };
 
+  /* ---------- ข้อมูลโรงเรียน (แก้ได้จากหน้าแอดมิน) ---------- */
+  // ใส่ data-site="school" | "area" | "site_name" | "school_line" | "logo" | "hero1" | "hero2" | "hero_desc" | "footer" ที่ element
+  PR.applySite = function (site) {
+    if (!site) return;
+    PR.store.set('pr_site', site);
+    var nodes = d.querySelectorAll('[data-site]');
+    for (var i = 0; i < nodes.length; i++) {
+      var k = nodes[i].getAttribute('data-site');
+      var v = k === 'school_line' ? [site.school, site.area].filter(String).join(' · ') : site[k];
+      if (v === undefined || v === null || v === '') continue;
+      if (k === 'logo') { if (nodes[i].getAttribute('src') !== v) nodes[i].setAttribute('src', v); }
+      else if (nodes[i].textContent !== v) nodes[i].textContent = v; // ข้อความเดิมไม่เปลี่ยน → คงการตัดคำเดิมไว้
+    }
+    var icon = d.querySelector('link[rel="icon"]');
+    if (icon && site.logo) icon.setAttribute('href', site.logo);
+    var base = d.documentElement.getAttribute('data-title');
+    if (base !== null) d.title = (base ? base + ' – ' : '') + site.site_name + ' ' + site.school;
+  };
+
+  /* ---------- นาฬิกาเวลาปัจจุบัน (เวลาประเทศไทย) ---------- */
+  // <span data-clock></span> = วันเสาร์ที่ 7 พฤศจิกายน 2569 · 01:21:05 น.
+  // <span data-clock="short"></span> = 7 พ.ย. 2569 · 01:21 น.
+  PR.nowText = function (short) {
+    var n = new Date();
+    try {
+      if (short) {
+        return n.toLocaleDateString('th-TH', { timeZone: TZ, day: 'numeric', month: 'short', year: 'numeric' }) + ' · ' +
+          n.toLocaleTimeString('th-TH', { timeZone: TZ, hour: '2-digit', minute: '2-digit' }) + ' น.';
+      }
+      return n.toLocaleDateString('th-TH', { timeZone: TZ, weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) + ' · ' +
+        n.toLocaleTimeString('th-TH', { timeZone: TZ, hour: '2-digit', minute: '2-digit', second: '2-digit' }) + ' น.';
+    } catch (e) { return n.toString(); }
+  };
+  function tickClock() {
+    var nodes = d.querySelectorAll('[data-clock]');
+    for (var i = 0; i < nodes.length; i++) nodes[i].textContent = PR.nowText(nodes[i].getAttribute('data-clock') === 'short');
+  }
+  d.addEventListener('DOMContentLoaded', function () {
+    PR.applySite(PR.store.get('pr_site'));
+    tickClock();
+    setInterval(tickClock, 1000);
+  });
+
+  /* ---------- เตรียมรูปก่อนอัปโหลด: ย่อขนาดในเครื่อง แล้วแปลงเป็น base64 ---------- */
+  // cb(err, { name, mime, data, size })
+  PR.prepareImage = function (file, maxSide, keepPng, cb) {
+    var url = (w.URL || w.webkitURL).createObjectURL(file);
+    var img = new Image();
+    img.onload = function () {
+      var scale = Math.min(1, maxSide / Math.max(img.naturalWidth, img.naturalHeight));
+      var cw = Math.round(img.naturalWidth * scale), ch = Math.round(img.naturalHeight * scale);
+      var canvas = d.createElement('canvas');
+      canvas.width = cw; canvas.height = ch;
+      var ctx = canvas.getContext('2d');
+      var png = keepPng && file.type === 'image/png';
+      if (!png) { ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, cw, ch); }
+      ctx.drawImage(img, 0, 0, cw, ch);
+      (w.URL || w.webkitURL).revokeObjectURL(url);
+      var mime = png ? 'image/png' : 'image/jpeg';
+      var dataUrl = canvas.toDataURL(mime, 0.88);
+      var data = dataUrl.slice(dataUrl.indexOf(',') + 1);
+      var name = String(file.name || 'photo').replace(/\.[^.]+$/, '') + (png ? '.png' : '.jpg');
+      cb(null, { name: name, mime: mime, data: data, size: Math.round(data.length * 0.75) });
+    };
+    img.onerror = function () { (w.URL || w.webkitURL).revokeObjectURL(url); cb(new Error('เปิดไฟล์ภาพ ' + file.name + ' ไม่ได้')); };
+    img.src = url;
+  };
+
   /* ---------- เอฟเฟกต์ค่อยๆ ปรากฏเมื่อเลื่อนถึง ---------- */
   var io = null;
   if (w.IntersectionObserver) {
