@@ -6,6 +6,7 @@
 <title>อัลบั้ม – คลังภาพประชาสัมพันธ์ โรงเรียนบ้านละลม</title>
 <meta name="description" content="อัลบั้มภาพกิจกรรม โรงเรียนบ้านละลม สพป.ศรีสะเกษ เขต 3">
 <link rel="icon" href="https://img2.pic.in.th/pic/Logo-7aecb8e321ff2955.png">
+<script>document.documentElement.className += ' js';</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anuphan:wght@400;500;600;700&amp;family=Noto+Sans+Thai:wght@400;500;600&amp;display=swap">
 <script src="https://cdn.tailwindcss.com"></script>
@@ -13,7 +14,7 @@
   tailwind.config = { theme: { extend: { fontFamily: { sans: ['"Noto Sans Thai"', 'system-ui', 'sans-serif'], display: ['Anuphan', '"Noto Sans Thai"', 'sans-serif'] } } } };
 </script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
-<link rel="stylesheet" href="styles.css?v=4">
+<link rel="stylesheet" href="styles.css?v=5">
 </head>
 <body class="bg-slate-50 text-slate-900 antialiased">
 
@@ -33,7 +34,7 @@
     <span id="crumb">กำลังโหลด…</span>
   </nav>
 
-  <section id="head" class="flex flex-wrap items-end justify-between gap-6 rounded-3xl border border-slate-200 bg-white p-7 shadow-sm">
+  <section id="head" class="reveal flex flex-wrap items-end justify-between gap-6 rounded-3xl border border-slate-200 bg-white p-7 shadow-sm">
     <div class="flex w-full max-w-2xl flex-col gap-3">
       <div class="h-5 w-20 animate-pulse rounded-lg bg-slate-200"></div>
       <div class="h-9 w-3/4 animate-pulse rounded-lg bg-slate-200"></div>
@@ -68,7 +69,7 @@
     </div>
   </div>
   <div class="lb-stage">
-    <img id="lb-img" src="" alt="" referrerpolicy="no-referrer">
+    <img id="lb-img" class="fade" src="" alt="" referrerpolicy="no-referrer">
     <button id="lb-prev" type="button" class="lb-btn lb-prev" aria-label="ภาพก่อนหน้า">
       <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 5l-7 7 7 7"></path></svg>
     </button>
@@ -79,8 +80,8 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script src="config.js?v=4"></script>
-<script src="common.js?v=4"></script>
+<script src="config.js?v=5"></script>
+<script src="common.js?v=5"></script>
 <script>
 (function () {
   var id = PR.param('id');
@@ -98,6 +99,7 @@
     var a = state.album;
     document.title = a.title + ' – คลังภาพประชาสัมพันธ์ โรงเรียนบ้านละลม';
     el('crumb').textContent = a.category || 'อัลบั้ม';
+    el('head').classList.add('in');
     var avatars = a.senders.slice(0, 3).map(function (n, i) {
       return '<span title="' + PR.esc(n) + '" class="flex h-7 w-7 items-center justify-center rounded-full border-2 border-white text-[11px] font-semibold text-white' + (i ? ' -ml-2' : '') + '" style="background:' + AVATAR[i % AVATAR.length] + '">' + PR.esc(PR.initial(n)) + '</span>';
     }).join('');
@@ -105,7 +107,7 @@
     el('head').innerHTML =
       '<div class="flex max-w-2xl flex-col gap-3">' +
         PR.catBadge(a.category, a.color) +
-        '<h1 class="font-display text-3xl font-bold leading-tight tracking-tight sm:text-4xl">' + PR.esc(a.title) + '</h1>' +
+        '<h1 class="pt-1 font-display text-[28px] font-bold leading-[1.5] sm:text-4xl sm:leading-[1.45]">' + PR.esc(a.title) + '</h1>' +
         (a.description ? '<p class="text-base leading-relaxed text-slate-600">' + PR.esc(a.description) + '</p>' : '') +
         '<div class="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-slate-500">' +
           (avatars ? '<span class="flex items-center">' + avatars + '</span>' : '') +
@@ -167,11 +169,12 @@
     el('grid').innerHTML = state.view.map(function (p, i) {
       var t = PR.tone(i * 5);
       var fresh = PR.isRecent(p.at, 24) ? '<span class="absolute left-2.5 top-2.5 rounded-full bg-white px-2 py-0.5 text-xs font-semibold text-teal-800 shadow-sm">ใหม่</span>' : '';
-      return '<button type="button" data-i="' + i + '" aria-label="เปิดดูภาพที่ ' + (i + 1) + '" class="ph relative flex aspect-[4/3] items-center justify-center overflow-hidden rounded-2xl" style="background:' + t[0] + ';cursor:zoom-in">' +
+      return '<button type="button" data-i="' + i + '" aria-label="เปิดดูภาพที่ ' + (i + 1) + '" style="--d:' + Math.min(i, 11) * 45 + 'ms" class="reveal ph relative flex aspect-[4/3] items-center justify-center overflow-hidden rounded-2xl" style="background:' + t[0] + ';cursor:zoom-in">' +
         PR.photoIcon(t[1], 40) +
-        '<img src="' + PR.thumb(p.id, 480) + '" alt="" loading="lazy" referrerpolicy="no-referrer" class="absolute inset-0 h-full w-full object-cover" onerror="this.style.display=\'none\'">' +
+        '<img src="' + PR.thumb(p.id, 480) + '" alt="" loading="lazy" referrerpolicy="no-referrer" class="fade absolute inset-0 h-full w-full object-cover" onload="this.classList.add(\'loaded\')" onerror="this.style.display=\'none\'">' +
         fresh + '</button>';
     }).join('');
+    PR.reveal(el('grid'));
   }
 
   /* ---------- Lightbox ---------- */
@@ -190,7 +193,10 @@
   function showLb() {
     var n = state.view.length;
     var p = state.view[state.index];
-    el('lb-img').src = PR.thumb(p.id, 1600);
+    var img = el('lb-img');
+    img.classList.remove('loaded');
+    img.onload = function () { img.classList.add('loaded'); };
+    img.src = PR.thumb(p.id, 1600);
     el('lb-img').alt = state.album.title + ' ภาพที่ ' + (state.index + 1);
     el('lb-count').textContent = (state.index + 1) + ' / ' + n;
     el('lb-meta').textContent = (p.sender ? 'ส่งโดย ' + p.sender + ' · ' : '') + PR.thaiDate(p.at) + ' ' + PR.thaiTime(p.at);
