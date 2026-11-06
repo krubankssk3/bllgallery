@@ -6,6 +6,17 @@
   var S = { token: '', user: null, albums: [], categories: [], album: null, photos: [], sel: {}, filter: 'all', q: '' };
   var V = document.getElementById('view');
   var esc = PR.esc;
+  var quiet = false; // true = อัปเดตหน้าเดิม ไม่ต้องเล่นเอฟเฟกต์เปิดหน้า
+
+  // เล่นเอฟเฟกต์ค่อยๆ ปรากฏทุกครั้งที่เปลี่ยนหน้า
+  if (window.MutationObserver) {
+    new window.MutationObserver(function () {
+      if (quiet) { quiet = false; return; }
+      V.classList.remove('view-enter');
+      void V.offsetWidth;
+      V.classList.add('view-enter');
+    }).observe(V, { childList: true });
+  }
 
   function el(id) { return document.getElementById(id); }
 
@@ -44,7 +55,7 @@
       showCancelButton: true,
       confirmButtonText: opt.confirm || 'ยืนยัน',
       cancelButtonText: 'ยกเลิก',
-      customClass: { popup: 'pr-swal', title: 'pr-swal-title', htmlContainer: 'pr-swal-text', actions: 'pr-swal-actions', confirmButton: 'pr-btn ' + (opt.danger ? 'pr-btn-danger' : 'pr-btn-primary'), cancelButton: 'pr-btn pr-btn-ghost' }
+      customClass: { container: 'pr-backdrop', popup: 'pr-swal', title: 'pr-swal-title', htmlContainer: 'pr-swal-text', actions: 'pr-swal-actions', confirmButton: 'pr-btn ' + (opt.danger ? 'pr-btn-danger' : 'pr-btn-primary'), cancelButton: 'pr-btn pr-btn-ghost' }
     }).then(function (r) { return r.isConfirmed; });
   }
 
@@ -54,7 +65,7 @@
   }
   function heading(title, sub, right) {
     return '<div class="flex flex-wrap items-center justify-between gap-3">' +
-      '<div class="flex flex-col gap-1"><h1 class="font-display text-[26px] font-bold tracking-tight">' + title + '</h1>' +
+      '<div class="flex flex-col gap-1"><h1 class="font-display text-[26px] font-bold">' + title + '</h1>' +
       (sub ? '<span class="text-sm text-slate-500">' + sub + '</span>' : '') + '</div>' + (right || '') + '</div>';
   }
   function btn(label, act, kind, attrs) {
@@ -96,6 +107,7 @@
     sset('pr_admin_token', '');
     el('app').classList.add('hidden'); el('app').classList.remove('flex');
     el('login').classList.remove('hidden'); el('login').classList.add('flex');
+    el('login-form').classList.add('in');
     if (window.Swal && window.Swal.isVisible()) window.Swal.close();
     if (msg) PR.toast.fire({ icon: 'info', title: msg });
     el('lg-user').focus();
@@ -282,6 +294,7 @@
     input.addEventListener('input', function () {
       S.q = input.value.trim();
       var pos = input.selectionStart;
+      quiet = true;
       renderAlbums();
       var again = el('al-q'); again.focus(); try { again.setSelectionRange(pos, pos); } catch (e) { /* ignore */ }
     });
@@ -499,13 +512,14 @@
     if (act === 'newAlbum') return doNewAlbum();
     if (act === 'albumHide') return setAlbumStatus('hidden');
     if (act === 'albumShow') return setAlbumStatus('published');
-    if (act === 'filter') { S.filter = t.getAttribute('data-f'); S.sel = {}; return renderAlbum(); }
+    if (act === 'filter') { S.filter = t.getAttribute('data-f'); S.sel = {}; quiet = true; return renderAlbum(); }
     if (act === 'toggle') {
       var f = t.getAttribute('data-file');
       if (S.sel[f]) delete S.sel[f]; else S.sel[f] = true;
+      quiet = true;
       return renderAlbum();
     }
-    if (act === 'clearSel') { S.sel = {}; return renderAlbum(); }
+    if (act === 'clearSel') { S.sel = {}; quiet = true; return renderAlbum(); }
     if (act === 'photosHide') return setPhotos('hidden');
     if (act === 'photosShow') return setPhotos('published');
     if (act === 'setCover') {
