@@ -39,14 +39,14 @@
     return Promise.race([req, timeout]);
   };
 
-  // เรียก Admin API (POST แบบ text/plain ไม่ต้องผ่าน preflight) หมดเวลา 60 วินาที
-  PR.post = function (body) {
+  // เรียก Admin API (POST แบบ text/plain ไม่ต้องผ่าน preflight) หมดเวลา ms (ปกติ 60 วินาที)
+  PR.post = function (body, ms) {
     var req = fetch(C.API_URL + '?api=admin', { method: 'POST', body: JSON.stringify(body) }).then(function (r) {
       if (!r.ok) throw new Error('HTTP ' + r.status);
       return r.json();
     });
     var timeout = new Promise(function (resolve, reject) {
-      setTimeout(function () { reject(new Error('timeout')); }, 60000);
+      setTimeout(function () { reject(new Error('timeout')); }, ms || 60000);
     });
     return Promise.race([req, timeout]);
   };
@@ -311,61 +311,153 @@
     '<path class="pr-arm" d="M8 32 L2 28" stroke="#0F172A" stroke-width="3.5" stroke-linecap="round"/>' +
     '</svg>';
 
-  // PR.runner.open({ title, text }) → { set(pct, text), done(text), close() }
+  // แถบวิ่ง (ใช้ร่วมกันทั้งป๊อปอัป, โหลดเต็มจอ, โหลดในหน้า)
+  function trackHtml(text) {
+    return '<div class="pr-run">' +
+      '<div class="pr-run-pct"><span class="pr-run-n">0</span>%</div>' +
+      '<div class="pr-run-track">' +
+        '<div class="pr-run-mascot">' + MASCOT + '<span class="pr-dust"></span></div>' +
+        '<div class="pr-run-flag" aria-hidden="true"><svg viewBox="0 0 24 32" width="22" height="30"><path d="M4 2v28" stroke="#64748B" stroke-width="2.5" stroke-linecap="round"/><path d="M5 3h14l-4 5 4 5H5z" fill="#F59E0B"/></svg></div>' +
+        '<div class="pr-run-line"><div class="pr-run-fill"></div></div>' +
+      '</div>' +
+      '<div class="pr-run-text" aria-live="polite">' + PR.esc(text || 'กำลังเริ่ม…') + '</div>' +
+      '</div>';
+  }
+
+  // ตัวควบคุมแถบวิ่ง getRoot() คืน .pr-run ปัจจุบัน (หาใหม่ทุกครั้ง เผื่อถูกแทนที่)
+  function makeCtl(getRoot) {
+    var api = {
+      pct: 0,
+      set: function (p, text) {
+        p = Math.max(0, Math.min(100, p));
+        api.pct = p;
+        var r = getRoot();
+        if (!r) return;
+        var f = r.querySelector('.pr-run-fill'), m = r.querySelector('.pr-run-mascot'), n = r.querySelector('.pr-run-n');
+        f.style.width = p + '%';
+        m.style.left = 'calc(26px + (100% - 64px) * ' + (p / 100) + ')';
+        n.textContent = Math.round(p);
+        if (text) r.querySelector('.pr-run-text').textContent = text;
+      },
+      text: function (text) {
+        var r = getRoot();
+        if (r && text) r.querySelector('.pr-run-text').textContent = text;
+      },
+      done: function (text) {
+        api.set(100, text || 'เสร็จแล้ว!');
+        var r = getRoot();
+        if (r && r.className.indexOf('pr-run-done') < 0) r.className += ' pr-run-done';
+      }
+    };
+    return api;
+  }
+
+  // PR.runner.open({ title, text }) → { set(pct, text), done(text), close() }  (ป๊อปอัป SweetAlert)
   PR.runner = {
     open: function (opt) {
       opt = opt || {};
       PR.swal.fire({
         title: opt.title || 'กำลังเตรียมไฟล์',
-        html: '<div class="pr-run" id="pr-run">' +
-          '<div class="pr-run-pct"><span id="pr-run-pct">0</span>%</div>' +
-          '<div class="pr-run-track">' +
-            '<div class="pr-run-mascot" id="pr-run-mascot">' + MASCOT + '<span class="pr-dust"></span></div>' +
-            '<div class="pr-run-flag" aria-hidden="true"><svg viewBox="0 0 24 32" width="22" height="30"><path d="M4 2v28" stroke="#64748B" stroke-width="2.5" stroke-linecap="round"/><path d="M5 3h14l-4 5 4 5H5z" fill="#F59E0B"/></svg></div>' +
-            '<div class="pr-run-line"><div class="pr-run-fill" id="pr-run-fill"></div></div>' +
-          '</div>' +
-          '<div class="pr-run-text" id="pr-run-text" aria-live="polite">' + PR.esc(opt.text || 'กำลังเริ่ม…') + '</div>' +
-          '</div>',
+        html: '<div class="pr-run-host">' + trackHtml(opt.text) + '</div>',
         allowOutsideClick: false,
         allowEscapeKey: false,
         showConfirmButton: false
       });
-      var api = {
-        pct: 0,
-        set: function (p, text) {
-          p = Math.max(0, Math.min(100, p));
-          api.pct = p;
-          var f = el('pr-run-fill'), m = el('pr-run-mascot'), t = el('pr-run-pct');
-          if (!f) return;
-          f.style.width = p + '%';
-          m.style.left = 'calc(26px + (100% - 64px) * ' + (p / 100) + ')';
-          t.textContent = Math.round(p);
-          if (text) el('pr-run-text').textContent = text;
-        },
-        done: function (text) {
-          api.set(100, text || 'เสร็จแล้ว!');
-          var box = el('pr-run');
-          if (box) box.className += ' pr-run-done';
-        },
-        close: function () { if (w.Swal) w.Swal.close(); }
-      };
-      function el(id) { return d.getElementById(id); }
+      var api = makeCtl(function () { return d.querySelector('.swal2-container .pr-run'); });
+      api.close = function () { if (w.Swal) w.Swal.close(); };
+      api.alive = function () { return !!d.querySelector('.swal2-container .pr-run'); };
       setTimeout(function () { api.set(0); }, 0);
       return api;
     },
 
     // วิ่งไปเรื่อยๆ ตามเวลาที่คาดไว้ (หยุดรอที่ ~92%) จนกว่าจะเรียก finish()
+    // stages = [[เปอร์เซ็นต์, 'ข้อความ'], ...] ไม่ใส่ก็ได้
     estimate: function (runner, seconds, stages) {
+      stages = stages || [];
       var start = Date.now();
       var timer = setInterval(function () {
         var t = (Date.now() - start) / 1000;
+        if (t > 1 && runner.alive && !runner.alive()) { clearInterval(timer); return; } // ป๊อปอัปถูกปิด/แทนที่แล้ว
         var p = 92 * (1 - Math.exp(-2.2 * t / Math.max(1, seconds)));
         var label = '';
         for (var i = 0; i < stages.length; i++) if (p >= stages[i][0]) label = stages[i][1];
-        runner.set(p, label);
+        runner.set(Math.max(runner.pct, p), label);
       }, 180);
       return function finish() { clearInterval(timer); };
     }
+  };
+
+  /* ---------- โหลดเต็มจอ (เปิดหน้าครั้งแรก, ล็อกอิน, เตรียมข้อมูลก่อนเข้าแอดมิน) ---------- */
+  // PR.loader.show('กำลังโหลด…', วินาทีที่คาด) · PR.loader.set('ข้อความใหม่') · PR.loader.hide(ทันที?)
+  PR.loader = (function () {
+    var box = null, ctl = null, finish = null, hideTimer = null, shown = false;
+    function logo() {
+      var site = PR.store.get('pr_site');
+      return (site && site.logo) || C.LOGO || '';
+    }
+    function name() {
+      var site = PR.store.get('pr_site');
+      return site ? [site.site_name, site.school].filter(String).join(' ') : '';
+    }
+    function build() {
+      box = d.createElement('div');
+      box.className = 'pr-loader';
+      box.setAttribute('role', 'status');
+      d.body.appendChild(box);
+      ctl = makeCtl(function () { return box && box.querySelector('.pr-run'); });
+    }
+    return {
+      show: function (text, seconds) {
+        if (!d.body) return;
+        if (!box) build();
+        if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
+        if (finish) finish();
+        var lg = logo(), nm = name();
+        box.innerHTML = '<div class="pr-loader-card">' +
+          (lg ? '<img class="pr-loader-logo" src="' + PR.esc(lg) + '" alt="">' : '') +
+          (nm ? '<div class="pr-loader-name">' + PR.esc(nm) + '</div>' : '') +
+          trackHtml(text || 'กำลังโหลด…') + '</div>';
+        box.className = 'pr-loader';
+        // บังคับให้เบราว์เซอร์วาดก่อน แล้วค่อยเฟดเข้า
+        void box.offsetWidth;
+        box.className = 'pr-loader pr-loader-in';
+        shown = true;
+        ctl.pct = 0;
+        ctl.set(0);
+        finish = PR.runner.estimate(ctl, seconds || 4);
+      },
+      set: function (text, pct) {
+        if (!shown) return;
+        if (typeof pct === 'number') ctl.set(Math.max(ctl.pct, pct), text);
+        else ctl.text(text);
+      },
+      hide: function (instant) {
+        if (!shown || !box) return;
+        shown = false;
+        if (finish) { finish(); finish = null; }
+        var b = box;
+        if (instant) { b.className = 'pr-loader'; return; }
+        ctl.done('พร้อมแล้ว!');
+        hideTimer = setTimeout(function () {
+          b.className = 'pr-loader pr-loader-in pr-loader-out';
+          hideTimer = setTimeout(function () { if (!shown) b.className = 'pr-loader'; hideTimer = null; }, 320);
+        }, 420);
+      },
+      active: function () { return shown; }
+    };
+  })();
+
+  /* ---------- โหลดในพื้นที่หน้า (เปลี่ยนเมนูแอดมิน ฯลฯ) ---------- */
+  // ใส่กล้องน้อยวิ่งลงใน container แทนเนื้อหาเดิม ตัวจับเวลาหยุดเองเมื่อถูกแทนที่
+  PR.inlineLoader = function (container, text, seconds) {
+    if (!container) return;
+    container.innerHTML = '<div class="pr-inline-load" data-loading="1">' + trackHtml(text || 'กำลังโหลดข้อมูล…') + '</div>';
+    var holder = container.firstChild;
+    var ctl = makeCtl(function () { return holder.parentNode ? holder.querySelector('.pr-run') : null; });
+    var finish = PR.runner.estimate(ctl, seconds || 3);
+    var watch = setInterval(function () {
+      if (!holder.parentNode) { finish(); clearInterval(watch); }
+    }, 400);
   };
 
   PR.notConfiguredHtml = function () {
