@@ -16,7 +16,7 @@
   tailwind.config = { theme: { extend: { fontFamily: { sans: ['"Noto Sans Thai"', 'system-ui', 'sans-serif'], display: ['Anuphan', '"Noto Sans Thai"', 'sans-serif'] } } } };
 </script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
-<link rel="stylesheet" href="styles.css?v=10">
+<link rel="stylesheet" href="styles.css?v=11">
 </head>
 <body class="bg-slate-50 text-slate-900 antialiased">
 
@@ -100,7 +100,7 @@
       <div class="h-[316px] animate-pulse rounded-[20px] bg-slate-200/70"></div>
       <div class="h-[316px] animate-pulse rounded-[20px] bg-slate-200/70"></div>
     </div>
-    <button id="more" type="button" class="hidden h-12 self-center rounded-xl border border-slate-300 bg-white px-7 text-[15px] font-medium shadow-sm hover:bg-slate-50">ดูอัลบั้มเพิ่ม</button>
+    <div id="pager"></div>
   </section>
 </main>
 
@@ -112,13 +112,14 @@
 </footer>
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script src="config.js?v=10"></script>
-<script src="common.js?v=10"></script>
+<script src="config.js?v=11"></script>
+<script src="common.js?v=11"></script>
 <script>
 (function () {
-  var state = { data: null, cat: '', year: '', q: '', shown: PR.config.PAGE_SIZE || 12 };
+  var state = { data: null, cat: '', year: '', q: '', page: 1 };
+  var SIZE = PR.config.PAGE_SIZE || 12;
   var grid = document.getElementById('grid');
-  var more = document.getElementById('more');
+  var pager = document.getElementById('pager');
 
   function el(id) { return document.getElementById(id); }
 
@@ -157,12 +158,14 @@
       grid.innerHTML = '<div class="col-span-full rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-14 text-center">' +
         '<div class="font-display text-lg font-semibold">ไม่พบอัลบั้ม</div>' +
         '<p class="mt-1 text-sm text-slate-500">' + (state.data.albums.length ? 'ลองเปลี่ยนคำค้นหรือหมวดหมู่' : 'ยังไม่มีอัลบั้ม ภาพจะขึ้นที่นี่เมื่อครูส่งรูปเข้ากลุ่ม LINE') + '</p></div>';
-      more.classList.add('hidden');
+      pager.innerHTML = '';
       return;
     }
-    grid.innerHTML = list.slice(0, state.shown).map(cardHtml).join('');
+    var pg = PR.page(list, state.page, SIZE);
+    state.page = pg.page;
+    grid.innerHTML = pg.items.map(cardHtml).join('');
     PR.reveal(grid);
-    more.classList.toggle('hidden', list.length <= state.shown);
+    pager.innerHTML = PR.pager(pg, 'albums', 'อัลบั้ม');
     el('list-title').textContent = (state.q || state.cat || state.year) ? 'พบ ' + list.length + ' อัลบั้ม' : 'อัลบั้มล่าสุด';
   }
 
@@ -255,7 +258,7 @@
     clearTimeout(timer);
     timer = setTimeout(function () {
       state.q = el('q').value.trim();
-      state.shown = PR.config.PAGE_SIZE || 12;
+      state.page = 1;
       if (state.data) renderGrid();
     }, 200);
   });
@@ -267,20 +270,21 @@
   });
   el('year').addEventListener('change', function () {
     state.year = el('year').value;
-    state.shown = PR.config.PAGE_SIZE || 12;
+    state.page = 1;
     if (state.data) renderGrid();
   });
   el('chips').addEventListener('click', function (e) {
     var b = e.target.closest('button[data-cat]');
     if (!b) return;
     state.cat = b.getAttribute('data-cat');
-    state.shown = PR.config.PAGE_SIZE || 12;
+    state.page = 1;
     renderChips();
     renderGrid();
   });
-  more.addEventListener('click', function () {
-    state.shown += PR.config.PAGE_SIZE || 12;
+  PR.bindPager(pager, function (page) {
+    state.page = page;
     renderGrid();
+    document.getElementById('albums').scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
 
   load();
