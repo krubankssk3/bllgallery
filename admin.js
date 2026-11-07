@@ -11,6 +11,8 @@
   // เล่นเอฟเฟกต์ค่อยๆ ปรากฏทุกครั้งที่เปลี่ยนหน้า
   if (window.MutationObserver) {
     new window.MutationObserver(function () {
+      // เนื้อหาจริงมาแทนกล้องน้อยแล้ว → ปิดหน้าโหลดเต็มจอ (ตอนล็อกอิน/เตรียมข้อมูล)
+      if (PR.loader.active() && !V.querySelector('[data-loading]')) PR.loader.hide();
       if (quiet) { quiet = false; return; }
       V.classList.remove('view-enter');
       void V.offsetWidth;
@@ -25,25 +27,40 @@
   function sset(k, v) { try { if (v) window.sessionStorage.setItem(k, v); else window.sessionStorage.removeItem(k); } catch (e) { /* ignore */ } }
 
   /* ---------- เรียก API ---------- */
-  function call(action, data) {
+  function call(action, data, ms) {
     var body = data || {};
     body.action = action;
     body.token = S.token;
-    return PR.post(body).then(function (r) {
+    return PR.post(body, ms).then(function (r) {
       if (r && r.error === 'auth') { showLogin('หมดเวลาการเข้าสู่ระบบ กรุณาเข้าสู่ระบบใหม่'); throw new Error('auth'); }
       if (!r || !r.ok) throw new Error((r && r.message) || 'ทำรายการไม่สำเร็จ');
       return r;
     });
   }
 
-  function busy(title) {
-    PR.swal.fire({ title: title || 'กำลังบันทึก…', allowOutsideClick: false, showConfirmButton: false, didOpen: function () { window.Swal.showLoading(); } });
+  // กล้องน้อยวิ่งระหว่างบันทึก: busy(หัวข้อ, ข้อความ, วินาทีที่คาด) → ok()/fail()
+  var BUSY = null;
+  function busy(title, text, seconds) {
+    endBusy();
+    var r = PR.runner.open({ title: title || 'กำลังบันทึก…', text: text || 'กล้องน้อยกำลังส่งข้อมูลไปที่ระบบ…' });
+    BUSY = { r: r, finish: PR.runner.estimate(r, seconds || 3, [[60, 'อีกนิดเดียว…']]) };
+  }
+  function endBusy() {
+    if (BUSY) { BUSY.finish(); BUSY = null; }
   }
   function ok(msg) {
-    window.Swal.close();
+    var b = BUSY;
+    endBusy();
+    if (b && b.r.alive()) {
+      b.r.done(msg || 'เสร็จแล้ว!');
+      setTimeout(function () { if (b.r.alive()) b.r.close(); PR.toast.fire({ icon: 'success', title: msg }); }, 520);
+      return;
+    }
+    if (window.Swal.isVisible()) window.Swal.close();
     PR.toast.fire({ icon: 'success', title: msg });
   }
   function fail(err) {
+    endBusy();
     if (err && err.message === 'auth') return;
     PR.swal.fire({ icon: 'error', title: 'ทำรายการไม่สำเร็จ', text: (err && err.message === 'timeout') ? 'เชื่อมต่อนานเกินไป ลองใหม่อีกครั้ง' : (err && err.message) || 'เกิดข้อผิดพลาด' });
   }
@@ -91,11 +108,11 @@
       return '<option value="' + esc(c.id) + '"' + (c.id === selected ? ' selected' : '') + '>' + esc(c.name) + '</option>';
     }).join('');
   }
-  function loading() {
-    V.innerHTML = '<div class="flex flex-col gap-4"><div class="h-9 w-64 animate-pulse rounded-lg bg-slate-200"></div>' +
-      '<div class="h-40 animate-pulse rounded-2xl bg-slate-200/70"></div><div class="h-40 animate-pulse rounded-2xl bg-slate-200/70"></div></div>';
+  function loading(text) {
+    PR.inlineLoader(V, text || 'กล้องน้อยกำลังไปหยิบข้อมูล…', 3);
   }
   function loadError(err) {
+    PR.loader.hide(true);
     if (err && err.message === 'auth') return;
     V.innerHTML = card('<div class="p-8 text-center"><div class="font-display text-lg font-semibold">โหลดข้อมูลไม่สำเร็จ</div>' +
       '<p class="mt-1 text-sm text-slate-500">' + esc((err && err.message) || '') + '</p>' + '<div class="mt-4">' + btn('ลองใหม่', 'reload', 'primary') + '</div></div>');
@@ -108,6 +125,8 @@
     el('app').classList.add('hidden'); el('app').classList.remove('flex');
     el('login').classList.remove('hidden'); el('login').classList.add('flex');
     el('login-form').classList.add('in');
+    PR.loader.hide(true);
+    endBusy();
     if (window.Swal && window.Swal.isVisible()) window.Swal.close();
     if (msg) PR.toast.fire({ icon: 'info', title: msg });
     el('lg-user').focus();
@@ -123,14 +142,17 @@
     e.preventDefault();
     var b = el('lg-btn');
     b.disabled = true; b.textContent = 'กำลังเข้าสู่ระบบ…';
+    PR.loader.show('กำลังตรวจสอบบัญชีผู้ใช้…', 4);
     PR.post({ action: 'login', username: el('lg-user').value, password: el('lg-pass').value }).then(function (r) {
       if (!r.ok) throw new Error(r.message || 'เข้าสู่ระบบไม่สำเร็จ');
       S.token = r.token; S.user = r.user;
       PR.applySite(r.site);
       sset('pr_admin_token', r.token);
       el('lg-pass').value = '';
+      PR.loader.set('เข้าสู่ระบบแล้ว กำลังเตรียมข้อมูลก่อนเข้าระบบ…', 45);
       showApp();
     }).catch(function (err) {
+      PR.loader.hide(true);
       PR.swal.fire({ icon: 'error', title: 'เข้าสู่ระบบไม่สำเร็จ', text: err.message === 'timeout' ? 'เชื่อมต่อนานเกินไป ลองใหม่อีกครั้ง' : err.message });
     }).then(function () { b.disabled = false; b.textContent = 'เข้าสู่ระบบ'; });
   });
@@ -191,7 +213,7 @@
       badge.textContent = r.stats.pending;
       badge.classList.toggle('hidden', !r.stats.pending);
 
-      var tiles = [['อัลบั้มบนเว็บ', r.stats.albums, ''], ['ภาพบนเว็บ', r.stats.photos, ''], ['ภาพรอจัดอัลบั้ม', r.stats.pending, r.pending.length + ' ชุดภาพ'], ['ยอดเข้าชมทั้งหมด', r.views || 0, 'กลุ่ม LINE ที่เปิดรับ ' + r.stats.groups + ' กลุ่ม']];
+      var tiles = [['อัลบั้มบนเว็บ', r.stats.albums, ''], ['ภาพบนเว็บ', r.stats.photos, ''], ['ภาพรอจัดอัลบั้ม', r.stats.pending, r.pending.length + ' ชุดภาพ' + (r.stats.awaiting ? ' · รอยืนยัน ' + r.stats.awaiting + ' ภาพ' : '')], ['ยอดเข้าชมทั้งหมด', r.views || 0, 'กลุ่ม LINE ที่เปิดรับ ' + r.stats.groups + ' กลุ่ม']];
       var top = (r.top || []).length ? card('<div class="border-b border-slate-200 px-5 py-4 font-display text-[17px] font-semibold">อัลบั้มที่มีคนดูมากที่สุด</div>' +
         r.top.map(function (a, n) {
           return '<a href="#album/' + encodeURIComponent(a.id) + '" class="flex items-center gap-4 border-b border-slate-100 px-5 py-3 text-slate-900 last:border-0 hover:bg-slate-50">' +
@@ -208,22 +230,32 @@
       }).join('') + '<option value="__new">+ สร้างอัลบั้มใหม่…</option>';
 
       var list = r.pending.length ? r.pending.map(function (b) {
-        var thumbs = b.files.slice(0, 3).map(function (f) { return thumb(f, 58); }).join('') +
-          (b.count > 3 ? '<div class="flex h-[58px] w-[58px] flex-none items-center justify-center rounded-lg bg-slate-100 text-[13px] font-semibold text-slate-700">+' + (b.count - 3) + '</div>' : '');
-        return '<div data-batch="' + esc(b.batch_id) + '" class="flex flex-wrap items-center gap-4 border-b border-slate-100 px-5 py-4 last:border-0">' +
+        var aw = Number(b.awaiting || 0);
+        var thumbs = aw
+          ? '<div class="flex h-[58px] w-[58px] flex-none flex-col items-center justify-center gap-0.5 rounded-lg bg-amber-50 text-amber-700 ring-1 ring-amber-200">' +
+            '<svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg>' +
+            '<span class="text-[10px] font-semibold leading-none">' + aw + ' ภาพ</span></div>'
+          : b.files.slice(0, 3).map(function (f) { return thumb(f, 58); }).join('') +
+            (b.count > 3 ? '<div class="flex h-[58px] w-[58px] flex-none items-center justify-center rounded-lg bg-slate-100 text-[13px] font-semibold text-slate-700">+' + (b.count - 3) + '</div>' : '');
+        var old = aw && b.at && (Date.now() - new Date(b.at).getTime() > 20 * 3600000);
+        var note = aw
+          ? '<span class="mt-1 inline-flex w-fit items-center gap-1 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-800">ยังไม่บันทึกเข้าระบบ · รอยืนยัน' + (b.failed ? ' (ดึงไม่สำเร็จ ' + b.failed + ')' : '') + '</span>' +
+            (old ? '<span class="text-xs text-rose-600">ส่งมานานแล้ว LINE อาจลบไฟล์ไปแล้ว ควรยืนยันโดยเร็ว</span>' : '')
+          : '';
+        return '<div data-batch="' + esc(b.batch_id) + '" data-awaiting="' + aw + '" class="flex flex-wrap items-center gap-4 border-b border-slate-100 px-5 py-4 last:border-0">' +
           '<div class="flex gap-1.5">' + thumbs + '</div>' +
           '<div class="flex min-w-[180px] flex-1 flex-col gap-0.5"><span class="text-[15px] font-semibold">' + b.count + ' ภาพ · ' + esc(b.sender || 'ไม่ทราบชื่อ') + '</span>' +
-          '<span class="text-[13px] text-slate-500">' + esc(b.group) + ' · ' + PR.timeAgo(b.at) + '</span></div>' +
+          '<span class="text-[13px] text-slate-500">' + esc(b.group) + ' · ' + PR.timeAgo(b.at) + '</span>' + note + '</div>' +
           '<label class="sr-only" for="sel-' + esc(b.batch_id) + '">เลือกอัลบั้ม</label>' +
           '<select id="sel-' + esc(b.batch_id) + '" data-role="album" class="h-11 min-w-[200px] flex-1 rounded-xl border border-slate-300 bg-white px-3 text-sm sm:flex-none">' + albumOpts + '</select>' +
-          '<div class="flex gap-2">' + btn('ยืนยัน', 'assign', 'primary') +
-          '<button type="button" data-act="hideBatch" aria-label="ซ่อนชุดภาพนี้" class="flex h-11 w-11 items-center justify-center rounded-xl border border-slate-300 bg-white hover:bg-slate-50">' +
+          '<div class="flex gap-2">' + btn(aw ? 'ยืนยันบันทึก' : 'ยืนยัน', 'assign', 'primary') +
+          '<button type="button" data-act="hideBatch" aria-label="' + (aw ? 'ไม่บันทึกชุดภาพนี้' : 'ซ่อนชุดภาพนี้') + '" title="' + (aw ? 'ไม่บันทึก' : 'ซ่อน') + '" class="flex h-11 w-11 items-center justify-center rounded-xl border border-slate-300 bg-white hover:bg-slate-50">' +
           '<svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#334155" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"></path></svg></button></div>' +
           '</div>';
       }).join('') : '<div class="px-5 py-12 text-center"><div class="font-display text-lg font-semibold">ไม่มีภาพรอจัดอัลบั้ม</div><p class="mt-1 text-sm text-slate-500">ภาพทุกชุดจากกลุ่ม LINE ถูกจัดเข้าอัลบั้มแล้ว</p></div>';
 
       V.innerHTML = '<div class="flex flex-col gap-6">' +
-        heading('ภาพรอจัดอัลบั้ม', 'ภาพที่ส่งเข้ากลุ่ม LINE แต่ยังไม่ได้ระบุอัลบั้ม จัดได้ที่นี่หรือกดปุ่มในไลน์ก็ได้', btn('รีเฟรช', 'reload')) +
+        heading('ภาพรอจัดอัลบั้ม', 'ภาพที่ส่งเข้ากลุ่ม LINE แต่ยังไม่ได้ยืนยันอัลบั้ม ตรวจแล้วกดยืนยันบันทึก หรือกด ✕ ถ้าไม่ใช่ภาพที่ต้องการ', btn('รีเฟรช', 'reload')) +
         stats +
         card('<div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 px-5 py-4"><span class="font-display text-[17px] font-semibold">ชุดภาพจาก LINE</span>' +
           '<span class="text-[13px] text-slate-500">ภาพที่ส่งพร้อมกัน หรือส่งติดกันภายใน 5 นาที รวมเป็น 1 ชุด</span></div>' + list, 'overflow-hidden') +
@@ -251,11 +283,20 @@
     var sel = row.querySelector('select[data-role="album"]');
     var val = sel.value;
     if (!val) { PR.toast.fire({ icon: 'info', title: 'เลือกอัลบั้มก่อน' }); sel.focus(); return; }
+    var waiting = Number(row.getAttribute('data-awaiting') || 0);
     var go = function (data) {
       data.batch_id = batchId;
-      busy();
-      call('assignBatch', data).then(function (r) {
-        ok('บันทึก ' + r.count + ' ภาพเข้า “' + r.album.title + '” แล้ว');
+      // ภาพที่ยังรอยืนยัน ต้องดึงไฟล์จาก LINE ตอนนี้ ใช้เวลาราว 1.5 วินาทีต่อภาพ
+      if (waiting) busy('กำลังบันทึก ' + waiting + ' ภาพ', 'กล้องน้อยกำลังดึงภาพจาก LINE มาเก็บในอัลบั้ม…', Math.max(4, waiting * 1.5));
+      else busy();
+      call('assignBatch', data, waiting ? 330000 : 60000).then(function (r) {
+        var msg = 'บันทึก ' + r.count + ' ภาพเข้า “' + r.album.title + '” แล้ว';
+        if (r.failed) {
+          endBusy();
+          PR.swal.fire({ icon: 'warning', title: msg, text: 'ดึงไฟล์จาก LINE ไม่ได้ ' + r.failed + ' ภาพ (LINE อาจลบไฟล์ไปแล้ว) ภาพนั้นยังอยู่ในรายการ ลองยืนยันอีกครั้ง หรือกดไม่บันทึก', confirmButtonText: 'ตกลง' });
+        } else {
+          ok(msg);
+        }
         viewPending();
       }).catch(fail);
     };
@@ -267,6 +308,14 @@
   }
 
   function doHideBatch(row) {
+    var waiting = Number(row.getAttribute('data-awaiting') || 0);
+    if (waiting) {
+      return confirmBox({ title: 'ไม่บันทึก ' + waiting + ' ภาพนี้?', html: 'ภาพที่ยังรอยืนยันจะถูกทิ้ง ไม่มีไฟล์ใดถูกเก็บลง Google Drive', confirm: 'ไม่บันทึก', danger: true }).then(function (yes) {
+        if (!yes) return;
+        busy('กำลังยกเลิกชุดภาพ…');
+        call('discardBatch', { batch_id: row.getAttribute('data-batch') }).then(function (r) { ok('ไม่บันทึก ' + r.count + ' ภาพแล้ว'); viewPending(); }).catch(fail);
+      });
+    }
     confirmBox({ title: 'ซ่อนชุดภาพนี้?', html: 'ภาพจะไม่แสดงบนเว็บ และปิดการแชร์ไฟล์ใน Google Drive<br>กู้คืนได้ภายหลังจากหน้าอัลบั้ม', confirm: 'ซ่อนภาพ', danger: true }).then(function (yes) {
       if (!yes) return;
       busy('กำลังซ่อนภาพ…');
@@ -571,7 +620,8 @@
       };
       V.innerHTML = '<div class="flex flex-col gap-6">' +
         heading('ตั้งค่าบอท', 'การทำงานของ PR Bot ในกลุ่ม LINE') +
-        card(row('s-reply', 'ตอบกลับในกลุ่มทุกครั้งที่ได้รับภาพ', 'ปิดแล้วบอทจะรับภาพเงียบๆ ภาพที่ยังไม่ระบุอัลบั้มจะรอแอดมินจัดในหน้านี้ ส่วนปุ่มและคำสั่งยังตอบตามปกติ', st.reply) +
+        card(row('s-confirm', 'ถามยืนยันก่อนบันทึกภาพเข้าระบบ', 'เปิดไว้ (แนะนำ) บอทจะยังไม่เก็บไฟล์ลง Drive จนกว่าครูจะกดเลือกอัลบั้ม มีปุ่ม “ไม่ต้องบันทึกชุดนี้” กันส่งรูปผิด ปิดแล้วบอทจะเก็บภาพทันทีแบบเดิม', st.confirm !== false) +
+          row('s-reply', 'ตอบกลับในกลุ่มทุกครั้งที่ได้รับภาพ', 'ปิดแล้วบอทจะรับภาพเงียบๆ ภาพที่ยังไม่ระบุอัลบั้มจะรอแอดมินจัดในหน้านี้ ส่วนปุ่มและคำสั่งยังตอบตามปกติ', st.reply) +
           row('s-summary', 'ส่งสรุปภาพประจำวันเข้ากลุ่ม', 'ส่งเฉพาะวันที่มีภาพเข้ามา 1 ข้อความต่อกลุ่ม (นับโควตาข้อความของ LINE OA)', st.summary) +
           '<div class="flex flex-wrap items-center justify-between gap-4 px-5 py-4"><div class="flex flex-col gap-0.5"><label for="s-hour" class="font-semibold">เวลาส่งสรุป</label>' +
           '<span class="text-[13px] text-slate-500">ส่งในช่วงต้นชั่วโมงที่เลือก</span></div>' +
@@ -588,8 +638,9 @@
 
   function saveSettings() {
     busy();
-    call('saveSettings', { reply: el('s-reply').checked, summary: el('s-summary').checked, hour: Number(el('s-hour').value) }).then(function (r) {
+    call('saveSettings', { reply: el('s-reply').checked, confirm: el('s-confirm').checked, summary: el('s-summary').checked, hour: Number(el('s-hour').value) }).then(function (r) {
       if (r.warning) {
+        endBusy();
         PR.swal.fire({ icon: 'warning', title: 'บันทึกแล้ว แต่ยังขาดอีก 1 ขั้น', text: r.warning, confirmButtonText: 'เข้าใจแล้ว' });
       } else {
         ok('บันทึกการตั้งค่าแล้ว');
@@ -601,6 +652,7 @@
   function previewSummary() {
     busy('กำลังสร้างตัวอย่าง…');
     call('previewSummary').then(function (r) {
+      endBusy();
       PR.swal.fire({
         title: 'ตัวอย่างสรุปวันนี้',
         html: r.items.length ? r.items.map(function (it) {
@@ -693,8 +745,9 @@
       }
     }).then(function (r) {
       if (!r.isConfirmed) return;
-      busy('กำลังสำรองและล้างข้อมูล…');
-      call('resetSystem', { confirm_text: r.value }).then(function (res) {
+      busy('กำลังสำรองและล้างข้อมูล…', 'กล้องน้อยกำลังทำสำเนาสำรอง แล้วเคลียร์ข้อมูลเดิม…', 25);
+      call('resetSystem', { confirm_text: r.value }, 300000).then(function (res) {
+        endBusy();
         PR.store.set('pr_home', null);
         PR.swal.fire({
           icon: 'success',
@@ -781,7 +834,12 @@
   }
   S.token = sget('pr_admin_token');
   if (!S.token) return showLogin();
-  call('me').then(function (r) { S.user = r.user; PR.applySite(r.site); showApp(); }).catch(function (err) {
+  PR.loader.show('กำลังเตรียมข้อมูลก่อนเข้าระบบ…', 6);
+  call('me').then(function (r) {
+    S.user = r.user; PR.applySite(r.site);
+    PR.loader.set('ยืนยันตัวตนแล้ว กำลังโหลดหน้าแรก…', 40);
+    showApp();
+  }).catch(function (err) {
     if (err.message !== 'auth') showLogin('เชื่อมต่อไม่สำเร็จ ลองเข้าสู่ระบบใหม่');
   });
 })();
