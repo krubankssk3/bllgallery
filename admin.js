@@ -462,10 +462,16 @@
     V.innerHTML = '<div class="flex flex-col gap-6">' +
       '<a href="#albums" class="self-start text-sm font-medium text-teal-700 hover:text-teal-800">← อัลบั้มทั้งหมด</a>' +
       heading(esc(a.title) + ' ' + statusPill(a.status), PR.num(a.count) + ' ภาพบนเว็บ · เข้าชม ' + PR.num(a.views) + ' ครั้ง · สร้างโดย ' + esc(a.created_by || '-'), actions) +
-      form +
+      '<div class="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">' + form + coverCard(a) + '</div>' +
       card('<div class="flex flex-col gap-4 p-5"><div class="flex flex-wrap items-center justify-between gap-3"><span class="font-display text-[17px] font-semibold">ภาพในอัลบั้ม</span>' +
         '<div class="flex gap-1 rounded-xl bg-slate-100 p-1">' + filters + '</div></div>' + bar + grid + '</div>') +
       '</div>';
+
+    el('cv-file').addEventListener('change', function () {
+      var f = el('cv-file').files[0];
+      el('cv-file').value = '';
+      if (f) uploadCover(f);
+    });
 
     el('up-files').addEventListener('change', function () {
       var files = [].slice.call(el('up-files').files || []);
@@ -478,6 +484,45 @@
       busy();
       call('saveAlbum', { id: a.id, title: el('f-title').value, category_id: el('f-cat').value, event_date: el('f-date').value, description: el('f-desc').value })
         .then(function () { ok('บันทึกข้อมูลอัลบั้มแล้ว'); viewAlbum(a.id); }).catch(fail);
+    });
+  }
+
+  /* ---------- ภาพปกอัลบั้ม (อัปโหลดเองได้ ไม่ต้องทำผ่าน LINE) ---------- */
+  function coverCard(a) {
+    var t = PR.tone(a.cover ? a.cover.length : 0);
+    var img = a.cover ? '<img id="cv-img" src="' + PR.thumb(a.cover, 800) + '" alt="ภาพปกอัลบั้ม" referrerpolicy="no-referrer" class="absolute inset-0 h-full w-full object-cover" onerror="this.style.display=\'none\'">' : '';
+    var tag = a.cover ? (a.customCover ? 'ปกที่อัปโหลดเอง' : 'ภาพจากในอัลบั้ม') : 'ยังไม่มีภาพปก';
+    return card('<div class="flex flex-col gap-4 p-5">' +
+      '<div class="flex items-center justify-between gap-2"><span class="font-display text-[17px] font-semibold">ภาพปกอัลบั้ม</span>' +
+      '<span class="rounded-full ' + (a.customCover ? 'bg-teal-50 text-teal-800' : 'bg-slate-100 text-slate-600') + ' px-2.5 py-0.5 text-xs font-semibold">' + tag + '</span></div>' +
+      // สัดส่วนเดียวกับการ์ดหน้าเว็บ
+      '<div class="relative flex aspect-[16/9] items-center justify-center overflow-hidden rounded-2xl ring-1 ring-slate-200" style="background:' + t[0] + '">' + PR.photoIcon(t[1], 44) + img +
+        '<span class="absolute bottom-2 left-2 rounded-full bg-slate-900/75 px-2.5 py-0.5 text-[11px] font-semibold text-white">' + PR.num(a.count) + ' ภาพ</span></div>' +
+      '<div class="flex flex-wrap gap-2">' + btn('อัปโหลดภาพปกใหม่', 'coverUpload', 'primary') +
+        (a.customCover ? btn('ใช้ภาพแรกในอัลบั้ม', 'coverReset') : '') + '</div>' +
+      '<input id="cv-file" type="file" accept="image/jpeg,image/png,image/webp" class="hidden" aria-label="เลือกภาพปก">' +
+      '<p class="text-[13px] leading-[1.7] text-slate-500">แนะนำภาพแนวนอน (16:9) ภาพปกที่อัปโหลดจะไม่นับเป็นภาพในอัลบั้ม หรือจะเลือกภาพด้านล่างแล้วกด “ตั้งเป็นปก” ก็ได้</p>' +
+      '</div>');
+  }
+  function uploadCover(f) {
+    var albumId = S.album.id;
+    var run = PR.runner.open({ title: 'กำลังเปลี่ยนภาพปก', text: 'กล้องน้อยกำลังย่อภาพให้พอดี…' });
+    var finish = PR.runner.estimate(run, 5, [[40, 'กำลังส่งภาพปกขึ้นระบบ…'], [80, 'อีกนิดเดียว…']]);
+    PR.prepareImage(f, 1920, false, function (err, img) {
+      if (err) { finish(); fail(err); return; }
+      call('uploadCover', { album_id: albumId, name: img.name, mime: img.mime, data: img.data }, 120000).then(function () {
+        finish();
+        run.done('ถึงเส้นชัยแล้ว! เปลี่ยนภาพปกเรียบร้อย');
+        PR.store.set('pr_home', null);
+        setTimeout(function () { run.close(); PR.toast.fire({ icon: 'success', title: 'เปลี่ยนภาพปกแล้ว' }); viewAlbum(albumId); }, 900);
+      }).catch(function (e) { finish(); fail(e); });
+    });
+  }
+  function resetCover() {
+    confirmBox({ title: 'ใช้ภาพแรกในอัลบั้มเป็นปก?', html: 'ภาพปกที่อัปโหลดเองจะถูกย้ายไปถังขยะ Google Drive', confirm: 'เปลี่ยนเป็นภาพแรก' }).then(function (yes) {
+      if (!yes) return;
+      busy('กำลังเปลี่ยนภาพปก…');
+      call('resetCover', { album_id: S.album.id }).then(function () { PR.store.set('pr_home', null); ok('ใช้ภาพแรกเป็นปกแล้ว'); viewAlbum(S.album.id); }).catch(fail);
     });
   }
 
@@ -861,6 +906,8 @@
     if (act === 'clearSel') { S.sel = {}; quiet = true; return renderAlbum(); }
     if (act === 'photosHide') return setPhotos('hidden');
     if (act === 'photosShow') return setPhotos('published');
+    if (act === 'coverUpload') return el('cv-file').click();
+    if (act === 'coverReset') return resetCover();
     if (act === 'setCover') {
       busy();
       return call('setCover', { album_id: S.album.id, file_id: Object.keys(S.sel)[0] }).then(function () { ok('ตั้งภาพปกแล้ว'); viewAlbum(S.album.id); }).catch(fail);
