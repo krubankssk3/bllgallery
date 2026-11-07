@@ -16,7 +16,7 @@
   tailwind.config = { theme: { extend: { fontFamily: { sans: ['"Noto Sans Thai"', 'system-ui', 'sans-serif'], display: ['Anuphan', '"Noto Sans Thai"', 'sans-serif'] } } } };
 </script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
-<link rel="stylesheet" href="styles.css?v=8">
+<link rel="stylesheet" href="styles.css?v=9">
 </head>
 <body class="bg-slate-50 text-slate-900 antialiased">
 
@@ -111,8 +111,8 @@
 </footer>
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script src="config.js?v=8"></script>
-<script src="common.js?v=8"></script>
+<script src="config.js?v=9"></script>
+<script src="common.js?v=9"></script>
 <script>
 (function () {
   var state = { data: null, cat: '', year: '', q: '', shown: PR.config.PAGE_SIZE || 12 };
@@ -234,14 +234,17 @@
     if (!PR.configured()) { grid.innerHTML = PR.notConfiguredHtml(); el('live-text').textContent = 'ยังไม่ได้ตั้งค่า'; return; }
     var cached = PR.store.get('pr_home');
     if (cached && cached.ok) { state.data = cached; renderAll(); }
+    else PR.loader.show('กล้องน้อยกำลังวิ่งไปหยิบอัลบั้มภาพ…', 4); // เปิดครั้งแรก ยังไม่มีข้อมูลในเครื่อง
     PR.api({ action: 'home' }).then(function (d) {
       if (!d || !d.ok) throw new Error((d && d.error) || 'bad');
       PR.store.set('pr_home', d);
       PR.applySite(d.site);
       state.data = d;
       renderAll();
+      PR.loader.hide();
       notifyNew(d);
     }).catch(function () {
+      PR.loader.hide(true);
       if (!state.data) showError();
     });
   }
