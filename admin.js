@@ -442,8 +442,9 @@
 
     var bar = selIds.length
       ? '<div class="flex flex-wrap items-center gap-2 rounded-xl bg-teal-50 px-3 py-2 text-sm"><span class="font-semibold text-teal-900">เลือก ' + selIds.length + ' ภาพ</span>' +
-        btn('ซ่อน', 'photosHide', 'danger') + btn('กู้คืน', 'photosShow') + (selIds.length === 1 ? btn('ตั้งเป็นภาพปก', 'setCover') : '') + btn('ล้างที่เลือก', 'clearSel') + '</div>'
-      : '<span class="text-sm text-slate-500">แตะภาพเพื่อเลือก แล้วซ่อน กู้คืน หรือตั้งเป็นภาพปก</span>';
+        btn('ย้ายไปอัลบั้มอื่น', 'photosMove', 'primary') + btn('ซ่อน', 'photosHide', 'danger') + btn('กู้คืน', 'photosShow') + (selIds.length === 1 ? btn('ตั้งเป็นภาพปก', 'setCover') : '') +
+        (selIds.length < shown.length ? btn('เลือกทั้งหมด', 'selAll') : '') + btn('ล้างที่เลือก', 'clearSel') + '</div>'
+      : '<div class="flex flex-wrap items-center gap-3"><span class="text-sm text-slate-500">แตะภาพเพื่อเลือก แล้วย้ายอัลบั้ม ซ่อน กู้คืน หรือตั้งเป็นภาพปก</span>' + (shown.length ? btn('เลือกทั้งหมด', 'selAll') : '') + '</div>';
 
     var grid = shown.length ? '<div class="grid grid-cols-[repeat(auto-fill,minmax(130px,1fr))] gap-3">' + shown.map(function (p) {
       var isSel = !!S.sel[p.file_id];
@@ -524,6 +525,45 @@
       busy('กำลังเปลี่ยนภาพปก…');
       call('resetCover', { album_id: S.album.id }).then(function () { PR.store.set('pr_home', null); ok('ใช้ภาพแรกเป็นปกแล้ว'); viewAlbum(S.album.id); }).catch(fail);
     });
+  }
+
+  // ย้ายภาพที่เลือกไปอัลบั้มอื่น (อัปผิดอัลบั้ม) พร้อมแจ้งกลุ่ม LINE
+  function movePhotos() {
+    var ids = Object.keys(S.sel);
+    var from = S.album;
+    var open = function () {
+      var others = S.albums.filter(function (x) { return x.id !== from.id; });
+      if (!others.length) {
+        return PR.swal.fire({ icon: 'info', title: 'ยังไม่มีอัลบั้มอื่น', text: 'สร้างอัลบั้มปลายทางก่อน แล้วกลับมาย้ายภาพ', confirmButtonText: 'ตกลง' });
+      }
+      PR.swal.fire({
+        title: 'ย้าย ' + ids.length + ' ภาพ',
+        html: '<div class="pr-form" style="text-align:left">' +
+          '<div style="font-size:14px;color:#475569">จาก <b>“' + esc(from.title) + '”</b></div>' +
+          '<div><label class="pr-label" for="mv-to">ไปที่อัลบั้ม</label><select id="mv-to" class="pr-input"><option value="">— เลือกอัลบั้มปลายทาง —</option>' +
+          others.map(function (x) { return '<option value="' + esc(x.id) + '">' + esc(x.title) + ' (' + PR.num(x.count) + ' ภาพ)' + (x.status === 'hidden' ? ' · ซ่อนอยู่' : '') + '</option>'; }).join('') + '</select></div>' +
+          '<label style="display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer"><input id="mv-notify" type="checkbox" checked style="width:18px;height:18px;accent-color:#0F766E"> แจ้งเตือนไปที่กลุ่ม LINE ด้วย</label></div>',
+        showCancelButton: true,
+        confirmButtonText: 'ย้ายภาพ',
+        cancelButtonText: 'ยกเลิก',
+        preConfirm: function () {
+          var to = el('mv-to').value;
+          if (!to) { window.Swal.showValidationMessage('เลือกอัลบั้มปลายทาง'); return false; }
+          return { to: to, notify: el('mv-notify').checked };
+        }
+      }).then(function (r) {
+        if (!r.isConfirmed) return;
+        busy('กำลังย้าย ' + ids.length + ' ภาพ', 'กล้องน้อยกำลังขนภาพไปอัลบั้มใหม่…', Math.max(3, ids.length * 0.4));
+        call('movePhotos', { file_ids: ids, from: from.id, to: r.value.to, notify: r.value.notify }, 180000).then(function (res) {
+          PR.store.set('pr_home', null);
+          ok('ย้าย ' + res.count + ' ภาพไป “' + res.to.title + '” แล้ว' + (res.notified ? ' · แจ้ง ' + res.notified + ' กลุ่ม' : ''));
+          viewAlbum(from.id);
+        }).catch(fail);
+      });
+    };
+    if (S.albums && S.albums.length) return open();
+    busy('กำลังโหลดรายชื่ออัลบั้ม…');
+    call('albums').then(function (r) { endBusy(); window.Swal.close(); S.albums = r.albums; open(); }).catch(fail);
   }
 
   function setPhotos(status) {
@@ -904,6 +944,11 @@
       return renderAlbum();
     }
     if (act === 'clearSel') { S.sel = {}; quiet = true; return renderAlbum(); }
+    if (act === 'photosMove') return movePhotos();
+    if (act === 'selAll') {
+      S.photos.forEach(function (p) { if (S.filter === 'all' || (S.filter === 'hidden' ? p.status === 'hidden' : p.status !== 'hidden')) S.sel[p.file_id] = 1; });
+      quiet = true; return renderAlbum();
+    }
     if (act === 'photosHide') return setPhotos('hidden');
     if (act === 'photosShow') return setPhotos('published');
     if (act === 'coverUpload') return el('cv-file').click();
