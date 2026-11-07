@@ -286,7 +286,7 @@
         '<div class="flex items-center gap-3 pt-2"><span class="font-display text-xl font-bold">สถิติคลังภาพ</span><span class="h-px flex-1 bg-slate-200"></span>' +
         '<a href="stats.html" target="_blank" rel="noopener" class="text-sm font-semibold text-teal-700 hover:underline">หน้าสถิติสาธารณะ ↗</a></div>' +
         chartCard('ภาพที่ส่งเข้ามา 14 วันล่าสุด', 'ชี้ที่แท่งเพื่อดูตัวเลข', 'ch-daily') +
-        '<div class="grid gap-6 lg:grid-cols-2">' + chartCard('สถานะภาพทั้งหมด', '', 'ch-status') + chartCard('ภาพบนเว็บตามหมวดหมู่', '', 'ch-cat') + '</div>' +
+        '<div class="grid gap-6 lg:grid-cols-2">' + chartCard('สถานะภาพทั้งหมด', '<button type="button" data-act="syncDrive" class="font-semibold text-teal-700 hover:underline">ตัวเลขไม่ตรงกับ Drive? ซิงค์ข้อมูล</button>', 'ch-status') + chartCard('ภาพบนเว็บตามหมวดหมู่', '', 'ch-cat') + '</div>' +
         '<div class="grid gap-6 lg:grid-cols-2">' + chartCard('ครูที่ส่งภาพมากที่สุด', 'นับภาพที่อยู่บนเว็บ', 'ch-senders') + chartCard('อัลบั้มที่มีคนดูมากที่สุด', '', 'ch-views') + '</div>' +
         chartCard('ภาพบนเว็บรายเดือน', '12 เดือนล่าสุด', 'ch-month') +
         '</div>';
@@ -580,6 +580,40 @@
     call('albums').then(function (r) { endBusy(); window.Swal.close(); S.albums = r.albums; open(); }).catch(fail);
   }
 
+  // ตรวจชีตให้ตรงกับไฟล์จริงใน Drive (ทำต่อหลายรอบเองถ้าภาพเยอะ)
+  function syncDrive() {
+    confirmBox({ title: 'ซิงค์ข้อมูลกับ Google Drive?', html: 'ระบบจะตรวจทุกไฟล์ภาพ รายการที่ไฟล์ถูกลบไปแล้วจะถูกเอาออกจากระบบ<br>ไม่มีการลบไฟล์ใดใน Drive', confirm: 'เริ่มซิงค์', icon: 'question' }).then(function (yes) {
+      if (!yes) return;
+      var run = PR.runner.open({ title: 'กำลังซิงค์กับ Drive', text: 'กล้องน้อยกำลังเช็กไฟล์ทีละภาพ…' });
+      var sum = { removedHidden: 0, removedShown: 0, moved: 0 };
+      var round = function (cursor) {
+        var finish = PR.runner.estimate(run, 20);
+        call('syncDrive', { cursor: cursor }, 330000).then(function (r) {
+          finish();
+          sum.removedHidden += r.removedHidden; sum.removedShown += r.removedShown; sum.moved += r.moved;
+          if (!r.done) {
+            run.set(Math.round(r.checked / Math.max(1, r.total) * 100), 'ตรวจแล้ว ' + PR.num(r.checked) + ' จาก ' + PR.num(r.total) + ' ไฟล์ ทำต่อ…');
+            return round(r.cursor);
+          }
+          run.done('ครบทุกไฟล์แล้ว!');
+          PR.store.set('pr_home', null); PR.store.set('pr_stats', null);
+          setTimeout(function () {
+            PR.swal.fire({
+              icon: 'success', title: 'ซิงค์ข้อมูลเรียบร้อย',
+              html: '<div style="text-align:left;line-height:1.9">ตรวจ ' + PR.num(r.total) + ' ไฟล์<br>' +
+                '• เอาภาพที่ซ่อนแต่ไฟล์ถูกลบแล้วออก ' + PR.num(sum.removedHidden) + ' รายการ<br>' +
+                '• เอาภาพบนเว็บที่ไฟล์ถูกลบแล้วออก ' + PR.num(sum.removedShown) + ' รายการ<br>' +
+                '• ย้ายภาพที่ซ่อนกลับเข้า _hidden ' + PR.num(sum.moved) + ' ไฟล์<br>' +
+                '<a href="' + esc(r.hiddenUrl) + '" target="_blank" rel="noopener" style="color:#0F766E;font-weight:600">เปิดโฟลเดอร์ _hidden ↗</a></div>',
+              confirmButtonText: 'ตกลง'
+            }).then(function () { route(); });
+          }, 700);
+        }).catch(function (e) { finish(); fail(e); });
+      };
+      round(0);
+    });
+  }
+
   function setPhotos(status) {
     var ids = Object.keys(S.sel);
     var run = function () {
@@ -803,6 +837,9 @@
           '<select id="s-hour" class="h-11 rounded-xl border border-slate-300 bg-white px-3 text-sm">' + hours + '</select></div>', 'overflow-hidden') +
         (st.summary && !st.trigger ? '<div class="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm leading-[1.7] text-amber-900"><b>ยังไม่ได้ติดตั้งตัวตั้งเวลา</b> — เปิด Apps Script แล้วรันฟังก์ชัน <code>installTriggers</code> 1 ครั้ง สรุปจึงจะส่งตามเวลา</div>' : '') +
         '<div class="flex flex-wrap justify-end gap-2">' + btn('ดูตัวอย่างสรุปวันนี้', 'previewSummary') + btn('บันทึกการตั้งค่า', 'saveSettings', 'primary') + '</div>' +
+        card('<div class="flex flex-wrap items-center justify-between gap-4 px-5 py-4"><div class="flex max-w-xl flex-col gap-1"><span class="font-semibold">ซิงค์ข้อมูลกับ Google Drive</span>' +
+          '<span class="text-[13px] leading-[1.7] text-slate-500">ใช้เมื่อลบหรือย้ายไฟล์ใน Drive ด้วยมือ แล้วตัวเลขบนเว็บหรือกราฟไม่ตรง ระบบจะลบรายการที่ไม่มีไฟล์แล้ว ย้ายภาพที่ซ่อนกลับเข้า _hidden และนับจำนวนภาพทุกอัลบั้มใหม่</span></div>' +
+          btn('ซิงค์ข้อมูลตอนนี้', 'syncDrive') + '</div>') +
         card('<div class="flex flex-col gap-1 px-5 py-4 text-sm leading-[1.7] text-slate-600"><span class="font-semibold text-slate-900">ข้อมูลระบบ</span>' +
           '<span>ที่อยู่เว็บ (WEB_URL): ' + (st.web_url ? esc(st.web_url) : '<span class="text-rose-600">ยังไม่ได้ตั้ง</span>') + '</span>' +
           '<span>ตัวตั้งเวลาสรุปประจำวัน: ' + (st.trigger ? 'ติดตั้งแล้ว' : 'ยังไม่ติดตั้ง') + '</span>' +
@@ -973,6 +1010,7 @@
     }
     if (act === 'clearSel') { S.sel = {}; quiet = true; return renderAlbum(); }
     if (act === 'photosMove') return movePhotos();
+    if (act === 'syncDrive') return syncDrive();
     if (act === 'selAll') {
       S.photos.forEach(function (p) { if (S.filter === 'all' || (S.filter === 'hidden' ? p.status === 'hidden' : p.status !== 'hidden')) S.sel[p.file_id] = 1; });
       quiet = true; return renderAlbum();
