@@ -14,7 +14,7 @@
   tailwind.config = { theme: { extend: { fontFamily: { sans: ['"Noto Sans Thai"', 'system-ui', 'sans-serif'], display: ['Anuphan', '"Noto Sans Thai"', 'sans-serif'] } } } };
 </script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
-<link rel="stylesheet" href="styles.css?v=8">
+<link rel="stylesheet" href="styles.css?v=9">
 </head>
 <body class="bg-slate-50 text-slate-900 antialiased">
 
@@ -88,8 +88,8 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script src="config.js?v=8"></script>
-<script src="common.js?v=8"></script>
+<script src="config.js?v=9"></script>
+<script src="common.js?v=9"></script>
 <script>
 (function () {
   var id = PR.param('id');
@@ -357,11 +357,14 @@
     var key = 'pr_album_' + id;
     var cached = PR.store.get(key);
     if (cached && cached.ok) renderAll(cached);
+    else PR.loader.show('กล้องน้อยกำลังเปิดอัลบั้มให้…', 4);
     PR.api({ action: 'album', id: id }).then(function (d) {
+      PR.loader.hide(!(d && d.ok));
       if (d && d.ok) { PR.store.set(key, d); renderAll(d); return; }
       if (d && d.error === 'not_found') { showMessage('ไม่พบอัลบั้ม', 'อัลบั้มนี้อาจถูกซ่อนหรือย้ายไปแล้ว'); return; }
       throw new Error('bad');
     }).catch(function () {
+      PR.loader.hide(true);
       if (!state.album) showMessage('โหลดข้อมูลไม่สำเร็จ', 'ตรวจการเชื่อมต่ออินเทอร์เน็ต แล้วลองใหม่อีกครั้ง');
     });
   }
