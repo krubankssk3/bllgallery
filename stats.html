@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="th" data-title="สถิติคลังภาพ">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>สถิติคลังภาพ – คลังภาพประชาสัมพันธ์ โรงเรียนบ้านละลม</title>
+<meta name="description" content="สถิติคลังภาพประชาสัมพันธ์ โรงเรียนบ้านละลม จำนวนภาพรายเดือน หมวดหมู่ และอัลบั้มยอดนิยม">
+<link rel="icon" href="https://img2.pic.in.th/pic/Logo-7aecb8e321ff2955.png">
+<script>document.documentElement.className += ' js';</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anuphan:wght@400;500;600;700&amp;family=Noto+Sans+Thai:wght@400;500;600&amp;display=swap">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = { theme: { extend: { fontFamily: { sans: ['"Noto Sans Thai"', 'system-ui', 'sans-serif'], display: ['Anuphan', '"Noto Sans Thai"', 'sans-serif'] } } } };
+</script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+<link rel="stylesheet" href="styles.css?v=10">
+</head>
+<body class="bg-slate-50 text-slate-900 antialiased">
+
+<div class="bg-slate-900 text-slate-200">
+  <div class="mx-auto flex max-w-6xl items-center justify-between gap-3 px-6 py-1.5 text-[12.5px] leading-[1.7]">
+    <span class="flex items-center gap-1.5"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg><span data-clock>&nbsp;</span></span>
+    <span class="hidden text-slate-400 sm:inline" data-site="school_line">โรงเรียนบ้านละลม · สพป.ศรีสะเกษ เขต 3</span>
+  </div>
+</div>
+
+<header class="sticky top-0 z-30 border-b border-slate-200 bg-white/85 backdrop-blur">
+  <div class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-6 py-3.5">
+    <a href="index.html" class="flex items-center gap-3 text-slate-900">
+      <img src="https://img2.pic.in.th/pic/Logo-7aecb8e321ff2955.png" alt="ตราโรงเรียน" data-site="logo" class="h-11 w-11 rounded-xl bg-white object-contain p-0.5 ring-1 ring-slate-200">
+      <span class="flex flex-col">
+        <span class="font-display text-lg font-bold" data-site="site_name">คลังภาพประชาสัมพันธ์</span>
+        <span class="text-[13px] text-slate-500" data-site="school_line">โรงเรียนบ้านละลม · สพป.ศรีสะเกษ เขต 3</span>
+      </span>
+    </a>
+    <nav aria-label="เมนูหลัก" class="flex flex-wrap items-center gap-1">
+      <a href="index.html" class="rounded-[10px] px-3.5 py-2.5 text-[15px] text-slate-700 hover:bg-slate-100">อัลบั้มทั้งหมด</a>
+      <a href="calendar.html" class="rounded-[10px] px-3.5 py-2.5 text-[15px] text-slate-700 hover:bg-slate-100">ปฏิทินกิจกรรม</a>
+      <a href="stats.html" aria-current="page" class="rounded-[10px] bg-teal-50 px-3.5 py-2.5 text-[15px] font-semibold text-teal-800">สถิติ</a>
+      <a href="admin.html" class="ml-2 rounded-[10px] bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800">สำหรับครู</a>
+    </nav>
+  </div>
+</header>
+
+<main class="mx-auto flex max-w-6xl flex-col gap-6 px-6 pb-14 pt-10">
+  <div class="reveal flex flex-wrap items-end justify-between gap-4">
+    <div class="flex flex-col gap-1">
+      <h1 class="font-display text-[30px] font-bold leading-[1.5] sm:text-4xl">สถิติคลังภาพ</h1>
+      <p class="text-slate-600">ภาพกิจกรรมที่เผยแพร่บนเว็บ <span id="gen" class="text-slate-500"></span></p>
+    </div>
+  </div>
+
+  <div id="tiles" class="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6"></div>
+
+  <section class="reveal rounded-[20px] border border-slate-200 bg-white p-5 shadow-sm sm:p-6" style="--d:80ms" aria-labelledby="h-month">
+    <div class="mb-5 flex flex-wrap items-baseline justify-between gap-2">
+      <h2 id="h-month" class="font-display text-xl font-semibold">ภาพที่เพิ่มเข้าคลังรายเดือน</h2>
+      <span class="text-[13px] text-slate-500">12 เดือนล่าสุด · ชี้ที่แท่งเพื่อดูตัวเลข</span>
+    </div>
+    <div id="c-month"></div>
+  </section>
+
+  <div class="grid gap-6 lg:grid-cols-2">
+    <section class="reveal rounded-[20px] border border-slate-200 bg-white p-5 shadow-sm sm:p-6" aria-labelledby="h-cat">
+      <h2 id="h-cat" class="mb-5 font-display text-xl font-semibold">สัดส่วนภาพตามหมวดหมู่</h2>
+      <div id="c-cat"></div>
+    </section>
+    <section class="reveal rounded-[20px] border border-slate-200 bg-white p-5 shadow-sm sm:p-6" style="--d:80ms" aria-labelledby="h-media">
+      <h2 id="h-media" class="mb-5 font-display text-xl font-semibold">ภาพนิ่งและคลิปวิดีโอ</h2>
+      <div id="c-media"></div>
+    </section>
+  </div>
+
+  <div class="grid gap-6 lg:grid-cols-2">
+    <section class="reveal rounded-[20px] border border-slate-200 bg-white p-5 shadow-sm sm:p-6" aria-labelledby="h-views">
+      <h2 id="h-views" class="mb-5 font-display text-xl font-semibold">อัลบั้มยอดนิยม</h2>
+      <div id="c-views"></div>
+    </section>
+    <section class="reveal rounded-[20px] border border-slate-200 bg-white p-5 shadow-sm sm:p-6" style="--d:80ms" aria-labelledby="h-big">
+      <h2 id="h-big" class="mb-5 font-display text-xl font-semibold">อัลบั้มที่มีภาพมากที่สุด</h2>
+      <div id="c-big"></div>
+    </section>
+  </div>
+
+  <section class="reveal rounded-[20px] border border-slate-200 bg-white p-5 shadow-sm sm:p-6" aria-labelledby="h-week">
+    <div class="mb-5 flex flex-wrap items-baseline justify-between gap-2">
+      <h2 id="h-week" class="font-display text-xl font-semibold">วันที่มีภาพกิจกรรมมากที่สุด</h2>
+      <span class="text-[13px] text-slate-500">นับจากวันที่ส่งภาพเข้ากลุ่ม</span>
+    </div>
+    <div id="c-week"></div>
+  </section>
+</main>
+
+<footer class="border-t border-slate-200 bg-white">
+  <div class="mx-auto max-w-6xl px-6 py-6 text-[13px] text-slate-500" data-site="footer">พัฒนาโดย นายชิติพัทธ์ นิลวรรณ ตำแหน่ง ครู โรงเรียนบ้านละลม สพป.ศรีสะเกษ เขต 3</div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="config.js?v=10"></script>
+<script src="common.js?v=10"></script>
+<script>
+(function () {
+  var el = function (id) { return document.getElementById(id); };
+  var TILES = [
+    ['albums', 'อัลบั้ม', '#CCFBF1', '#0F766E'],
+    ['photos', 'ภาพและคลิปทั้งหมด', '#DBEAFE', '#1D4ED8'],
+    ['thisMonth', 'เพิ่มในเดือนนี้', '#FEF3C7', '#B45309'],
+    ['videos', 'คลิปวิดีโอ', '#FCE7F3', '#BE185D'],
+    ['views', 'ยอดเข้าชมอัลบั้ม', '#EDE9FE', '#6D28D9'],
+    ['senders', 'ครูที่ร่วมส่งภาพ', '#DCFCE7', '#15803D']
+  ];
+
+  function render(d) {
+    var t = d.totals || {};
+    el('gen').textContent = '· อัปเดต ' + PR.thaiTime(d.generated);
+    el('tiles').innerHTML = TILES.map(function (x, i) {
+      return '<div class="reveal pr-stat rounded-[20px] border border-slate-200 bg-white px-5 py-4 shadow-sm" style="--d:' + (i * 60) + 'ms;--tint:' + x[2] + '">' +
+        '<div class="relative z-10 text-[13px] text-slate-500">' + x[1] + '</div>' +
+        '<div class="relative z-10 mt-1 font-display text-[30px] font-bold leading-[1.4]" style="color:' + x[3] + '" data-count="' + Number(t[x[0]] || 0) + '">0</div></div>';
+    }).join('');
+    PR.chart.bars(el('c-month'), { title: 'ภาพที่เพิ่มเข้าคลังรายเดือน', labels: d.monthly.labels, series: [{ name: 'ภาพ', color: '#0F766E', values: d.monthly.values }], unit: 'ภาพ', height: 230 });
+    PR.chart.donut(el('c-cat'), { title: 'สัดส่วนภาพตามหมวดหมู่', items: d.categories.map(function (c) { return { label: c.label, value: c.value, color: c.color || PR.chart.slot(c.slot) }; }), center: 'ภาพทั้งหมด' });
+    PR.chart.donut(el('c-media'), { title: 'ภาพนิ่งและคลิปวิดีโอ', items: d.media, center: 'ไฟล์ทั้งหมด', unit: 'ไฟล์' });
+    PR.chart.hbars(el('c-views'), { title: 'อัลบั้มยอดนิยม', items: d.topViews.map(function (a) { return { label: a.label, value: a.value, href: PR.albumUrl(a.id) }; }), unit: 'ครั้ง', color: '#7C3AED', empty: 'ยังไม่มียอดเข้าชม' });
+    PR.chart.hbars(el('c-big'), { title: 'อัลบั้มที่มีภาพมากที่สุด', items: d.topAlbums.map(function (a) { return { label: a.label, value: a.value, href: PR.albumUrl(a.id) }; }), unit: 'ภาพ', color: '#0F766E' });
+    PR.chart.bars(el('c-week'), { title: 'ภาพตามวันในสัปดาห์', labels: d.weekday.labels, series: [{ name: 'ภาพ', color: '#0F766E', values: d.weekday.values }], unit: 'ภาพ', height: 180 });
+    PR.reveal();
+    PR.chart.observe(document);
+  }
+
+  if (!PR.configured()) { el('tiles').innerHTML = PR.notConfiguredHtml(); return; }
+  var cached = PR.store.get('pr_stats');
+  if (cached && cached.ok) render(cached);
+  else PR.loader.show('กล้องน้อยกำลังนับภาพในคลัง…', 4);
+  PR.api({ action: 'stats' }).then(function (d) {
+    if (!d || !d.ok) throw new Error('bad');
+    PR.store.set('pr_stats', d);
+    PR.applySite(d.site);
+    render(d);
+    PR.loader.hide();
+  }).catch(function () {
+    PR.loader.hide(true);
+    if (!cached) el('tiles').innerHTML = '<div class="col-span-full rounded-2xl border border-rose-200 bg-rose-50 px-6 py-8 text-center text-rose-900">โหลดสถิติไม่สำเร็จ ตรวจการเชื่อมต่อแล้วลองใหม่</div>';
+  });
+})();
+</script>
+</body>
+</html>
