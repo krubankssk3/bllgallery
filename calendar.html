@@ -14,7 +14,7 @@
   tailwind.config = { theme: { extend: { fontFamily: { sans: ['"Noto Sans Thai"', 'system-ui', 'sans-serif'], display: ['Anuphan', '"Noto Sans Thai"', 'sans-serif'] } } } };
 </script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
-<link rel="stylesheet" href="styles.css?v=8">
+<link rel="stylesheet" href="styles.css?v=9">
 </head>
 <body class="bg-slate-50 text-slate-900 antialiased">
 
@@ -78,8 +78,8 @@
 </footer>
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script src="config.js?v=8"></script>
-<script src="common.js?v=8"></script>
+<script src="config.js?v=9"></script>
+<script src="common.js?v=9"></script>
 <script>
 (function () {
   var state = { albums: [], byDay: {}, y: 0, m: 0 };
@@ -175,14 +175,16 @@
 
   if (!PR.configured()) { el('list').innerHTML = PR.notConfiguredHtml(); return; }
   var cached = PR.store.get('pr_home');
-  if (cached && cached.ok) { index(cached.albums); render(); } else { render(); }
+  if (cached && cached.ok) { index(cached.albums); render(); } else { render(); PR.loader.show('กล้องน้อยกำลังเปิดปฏิทินกิจกรรม…', 4); }
   PR.api({ action: 'home' }).then(function (d) {
     if (!d || !d.ok) throw new Error('bad');
     PR.store.set('pr_home', d);
     PR.applySite(d.site);
     index(d.albums);
     render();
+    PR.loader.hide();
   }).catch(function () {
+    PR.loader.hide(true);
     if (!state.albums.length) el('list').innerHTML = '<div class="rounded-2xl border border-rose-200 bg-rose-50 px-6 py-8 text-center text-rose-900">โหลดข้อมูลไม่สำเร็จ ตรวจการเชื่อมต่อแล้วลองใหม่</div>';
   });
 })();
