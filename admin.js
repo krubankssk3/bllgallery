@@ -3,7 +3,8 @@
  * ต้องโหลดหลัง SweetAlert2, config.js, common.js
  */
 (function () {
-  var S = { token: '', user: null, albums: [], categories: [], album: null, photos: [], sel: {}, filter: 'all', q: '' };
+  var S = { token: '', user: null, albums: [], categories: [], album: null, photos: [], sel: {}, filter: 'all', q: '', pg: { pending: 1, albums: 1, photos: 1, users: 1 } };
+  var PAGE = { pending: 8, albums: 15, photos: 40, users: 20 }; // จำนวนต่อหน้า
   var V = document.getElementById('view');
   var esc = PR.esc;
   var quiet = false; // true = อัปเดตหน้าเดิม ไม่ต้องเล่นเอฟเฟกต์เปิดหน้า
@@ -219,44 +220,52 @@
           '<span class="font-display text-[28px] font-bold" data-count="' + Number(t[1] || 0) + '">' + PR.num(t[1]) + '</span>' + (t[2] ? '<span class="text-xs text-slate-500">' + t[2] + '</span>' : '') + '</div>');
       }).join('') + '</div>';
 
-      var albumOpts = '<option value="">— เลือกอัลบั้ม —</option>' + S.albums.map(function (a) {
-        return '<option value="' + esc(a.id) + '">' + esc(a.title) + '</option>';
-      }).join('') + '<option value="__new">+ สร้างอัลบั้มใหม่…</option>';
-
-      var list = r.pending.length ? r.pending.map(function (b) {
-        var aw = Number(b.awaiting || 0);
-        var thumbs = aw
-          ? '<div class="flex h-[58px] w-[58px] flex-none flex-col items-center justify-center gap-0.5 rounded-lg bg-amber-50 text-amber-700 ring-1 ring-amber-200">' +
-            '<svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg>' +
-            '<span class="text-[10px] font-semibold leading-none">' + aw + ' ภาพ</span></div>'
-          : b.files.slice(0, 3).map(function (f) { return thumb(f, 58); }).join('') +
-            (b.count > 3 ? '<div class="flex h-[58px] w-[58px] flex-none items-center justify-center rounded-lg bg-slate-100 text-[13px] font-semibold text-slate-700">+' + (b.count - 3) + '</div>' : '');
-        var old = aw && b.at && (Date.now() - new Date(b.at).getTime() > 20 * 3600000);
-        var note = aw
-          ? '<span class="mt-1 inline-flex w-fit items-center gap-1 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-800">ยังไม่บันทึกเข้าระบบ · รอยืนยัน' + (b.failed ? ' (ดึงไม่สำเร็จ ' + b.failed + ')' : '') + '</span>' +
-            (old ? '<span class="text-xs text-rose-600">ส่งมานานแล้ว LINE อาจลบไฟล์ไปแล้ว ควรยืนยันโดยเร็ว</span>' : '')
-          : '';
-        return '<div data-batch="' + esc(b.batch_id) + '" data-awaiting="' + aw + '" class="flex flex-wrap items-center gap-4 border-b border-slate-100 px-5 py-4 last:border-0">' +
-          '<div class="flex gap-1.5">' + thumbs + '</div>' +
-          '<div class="flex min-w-[180px] flex-1 flex-col gap-0.5"><span class="text-[15px] font-semibold">' + b.count + ' ภาพ · ' + esc(b.sender || 'ไม่ทราบชื่อ') + '</span>' +
-          '<span class="text-[13px] text-slate-500">' + esc(b.group) + ' · ' + PR.timeAgo(b.at) + '</span>' + note + '</div>' +
-          '<label class="sr-only" for="sel-' + esc(b.batch_id) + '">เลือกอัลบั้ม</label>' +
-          '<select id="sel-' + esc(b.batch_id) + '" data-role="album" class="h-11 min-w-[200px] flex-1 rounded-xl border border-slate-300 bg-white px-3 text-sm sm:flex-none">' + albumOpts + '</select>' +
-          '<div class="flex gap-2">' + btn(aw ? 'ยืนยันบันทึก' : 'ยืนยัน', 'assign', 'primary') +
-          '<button type="button" data-act="hideBatch" aria-label="' + (aw ? 'ไม่บันทึกชุดภาพนี้' : 'ซ่อนชุดภาพนี้') + '" title="' + (aw ? 'ไม่บันทึก' : 'ซ่อน') + '" class="flex h-11 w-11 items-center justify-center rounded-xl border border-slate-300 bg-white hover:bg-slate-50">' +
-          '<svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#334155" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"></path></svg></button></div>' +
-          '</div>';
-      }).join('') : '<div class="px-5 py-12 text-center"><div class="font-display text-lg font-semibold">ไม่มีภาพรอจัดอัลบั้ม</div><p class="mt-1 text-sm text-slate-500">ภาพทุกชุดจากกลุ่ม LINE ถูกจัดเข้าอัลบั้มแล้ว</p></div>';
-
+      S.dash = r;
       V.innerHTML = '<div class="flex flex-col gap-6">' +
         heading('ภาพรอจัดอัลบั้ม', 'ภาพที่ส่งเข้ากลุ่ม LINE แต่ยังไม่ได้ยืนยันอัลบั้ม ตรวจแล้วกดยืนยันบันทึก หรือกด ✕ ถ้าไม่ใช่ภาพที่ต้องการ', btn('รีเฟรช', 'reload')) +
         stats +
         card('<div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 px-5 py-4"><span class="font-display text-[17px] font-semibold">ชุดภาพจาก LINE</span>' +
-          '<span class="text-[13px] text-slate-500">ภาพที่ส่งพร้อมกัน หรือส่งติดกันภายใน 5 นาที รวมเป็น 1 ชุด</span></div>' + list, 'overflow-hidden') +
+          '<span class="text-[13px] text-slate-500">ภาพที่ส่งพร้อมกัน หรือส่งติดกันภายใน 5 นาที รวมเป็น 1 ชุด</span></div>' + '<div id="pend-list">' + pendingList(r) + '</div>', 'overflow-hidden') +
         '<div id="dash-charts"></div></div>';
       PR.chart.observe(V);
       loadDashCharts();
     }).catch(loadError);
+  }
+
+  // รายการชุดภาพรอจัด (แบ่งหน้า)
+  function pendingList(r) {
+    var albumOpts = '<option value="">— เลือกอัลบั้ม —</option>' + S.albums.map(function (a) {
+      return '<option value="' + esc(a.id) + '">' + esc(a.title) + '</option>';
+    }).join('') + '<option value="__new">+ สร้างอัลบั้มใหม่…</option>';
+
+    var pg = PR.page(r.pending, S.pg.pending, PAGE.pending);
+    S.pg.pending = pg.page;
+    var list = r.pending.length ? pg.items.map(function (b) {
+      var aw = Number(b.awaiting || 0);
+      var thumbs = aw
+        ? '<div class="flex h-[58px] w-[58px] flex-none flex-col items-center justify-center gap-0.5 rounded-lg bg-amber-50 text-amber-700 ring-1 ring-amber-200">' +
+          '<svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg>' +
+          '<span class="text-[10px] font-semibold leading-none">' + aw + ' ภาพ</span></div>'
+        : b.files.slice(0, 3).map(function (f) { return thumb(f, 58); }).join('') +
+          (b.count > 3 ? '<div class="flex h-[58px] w-[58px] flex-none items-center justify-center rounded-lg bg-slate-100 text-[13px] font-semibold text-slate-700">+' + (b.count - 3) + '</div>' : '');
+      var old = aw && b.at && (Date.now() - new Date(b.at).getTime() > 20 * 3600000);
+      var note = aw
+        ? '<span class="mt-1 inline-flex w-fit items-center gap-1 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-800">ยังไม่บันทึกเข้าระบบ · รอยืนยัน' + (b.failed ? ' (ดึงไม่สำเร็จ ' + b.failed + ')' : '') + '</span>' +
+          (old ? '<span class="text-xs text-rose-600">ส่งมานานแล้ว LINE อาจลบไฟล์ไปแล้ว ควรยืนยันโดยเร็ว</span>' : '')
+        : '';
+      return '<div data-batch="' + esc(b.batch_id) + '" data-awaiting="' + aw + '" class="flex flex-wrap items-center gap-4 border-b border-slate-100 px-5 py-4 last:border-0">' +
+        '<div class="flex gap-1.5">' + thumbs + '</div>' +
+        '<div class="flex min-w-[180px] flex-1 flex-col gap-0.5"><span class="text-[15px] font-semibold">' + b.count + ' ภาพ · ' + esc(b.sender || 'ไม่ทราบชื่อ') + '</span>' +
+        '<span class="text-[13px] text-slate-500">' + esc(b.group) + ' · ' + PR.timeAgo(b.at) + '</span>' + note + '</div>' +
+        '<label class="sr-only" for="sel-' + esc(b.batch_id) + '">เลือกอัลบั้ม</label>' +
+        '<select id="sel-' + esc(b.batch_id) + '" data-role="album" class="h-11 min-w-[200px] flex-1 rounded-xl border border-slate-300 bg-white px-3 text-sm sm:flex-none">' + albumOpts + '</select>' +
+        '<div class="flex gap-2">' + btn(aw ? 'ยืนยันบันทึก' : 'ยืนยัน', 'assign', 'primary') +
+        '<button type="button" data-act="hideBatch" aria-label="' + (aw ? 'ไม่บันทึกชุดภาพนี้' : 'ซ่อนชุดภาพนี้') + '" title="' + (aw ? 'ไม่บันทึก' : 'ซ่อน') + '" class="flex h-11 w-11 items-center justify-center rounded-xl border border-slate-300 bg-white hover:bg-slate-50">' +
+        '<svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#334155" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"></path></svg></button></div>' +
+        '</div>';
+    }).join('') : '<div class="px-5 py-12 text-center"><div class="font-display text-lg font-semibold">ไม่มีภาพรอจัดอัลบั้ม</div><p class="mt-1 text-sm text-slate-500">ภาพทุกชุดจากกลุ่ม LINE ถูกจัดเข้าอัลบั้มแล้ว</p></div>';
+    return list + (pg.pages > 1 ? '<div class="border-t border-slate-100 px-5 py-4">' + PR.pager(pg, 'pending', 'ชุดภาพ') + '</div>' : '');
+
   }
 
   /* ---------- กราฟสถิติในหน้าภาพรอจัดอัลบั้ม ---------- */
@@ -367,7 +376,9 @@
   function renderAlbums() {
     var q = S.q.toLowerCase();
     var list = S.albums.filter(function (a) { return !q || (a.title + ' ' + a.category).toLowerCase().indexOf(q) > -1; });
-    var rows = list.length ? list.map(function (a) {
+    var pg = PR.page(list, S.pg.albums, PAGE.albums);
+    S.pg.albums = pg.page;
+    var rows = list.length ? pg.items.map(function (a) {
       var i = S.albums.indexOf(a);
       return '<div class="flex items-center gap-2 border-b border-slate-100 pr-3 last:border-0 hover:bg-slate-50">' +
         '<a href="#album/' + encodeURIComponent(a.id) + '" class="flex min-w-0 flex-1 flex-wrap items-center gap-4 px-5 py-3.5 text-slate-900">' +
@@ -382,10 +393,11 @@
     V.innerHTML = '<div class="flex flex-col gap-6">' +
       heading('อัลบั้มทั้งหมด', S.albums.length + ' อัลบั้ม', btn('+ สร้างอัลบั้ม', 'newAlbum', 'primary')) +
       '<div><label for="al-q" class="sr-only">ค้นหาอัลบั้ม</label><input id="al-q" type="search" value="' + esc(S.q) + '" placeholder="ค้นหาชื่ออัลบั้มหรือหมวด" class="h-12 w-full max-w-md rounded-xl border border-slate-300 bg-white px-4 text-[15px] outline-none focus:border-teal-500 focus:ring-4 focus:ring-teal-500/15"></div>' +
-      card(rows, 'overflow-hidden') + '</div>';
+      card(rows, 'overflow-hidden') + PR.pager(pg, 'albums', 'อัลบั้ม') + '</div>';
     var input = el('al-q');
     input.addEventListener('input', function () {
       S.q = input.value.trim();
+      S.pg.albums = 1;
       var pos = input.selectionStart;
       quiet = true;
       renderAlbums();
@@ -404,7 +416,7 @@
   /* ================= แก้ไขอัลบั้ม ================= */
   function viewAlbum(id) {
     loading();
-    S.sel = {}; S.filter = 'all';
+    S.sel = {}; S.filter = 'all'; S.pg.photos = 1;
     call('album', { id: id }).then(function (r) {
       S.album = r.album; S.photos = r.photos; S.categories = r.categories;
       renderAlbum();
@@ -446,7 +458,9 @@
         (selIds.length < shown.length ? btn('เลือกทั้งหมด', 'selAll') : '') + btn('ล้างที่เลือก', 'clearSel') + '</div>'
       : '<div class="flex flex-wrap items-center gap-3"><span class="text-sm text-slate-500">แตะภาพเพื่อเลือก แล้วย้ายอัลบั้ม ซ่อน กู้คืน หรือตั้งเป็นภาพปก</span>' + (shown.length ? btn('เลือกทั้งหมด', 'selAll') : '') + '</div>';
 
-    var grid = shown.length ? '<div class="grid grid-cols-[repeat(auto-fill,minmax(130px,1fr))] gap-3">' + shown.map(function (p) {
+    var ppg = PR.page(shown, S.pg.photos, PAGE.photos);
+    S.pg.photos = ppg.page;
+    var grid = shown.length ? '<div class="grid grid-cols-[repeat(auto-fill,minmax(130px,1fr))] gap-3">' + ppg.items.map(function (p) {
       var isSel = !!S.sel[p.file_id];
       var off = p.status === 'hidden';
       var t = PR.tone(p.file_id.length);
@@ -458,7 +472,7 @@
         (p.type === 'video' ? '<span class="absolute bottom-2 right-2 rounded-full bg-slate-900/80 px-2 py-0.5 text-[11px] font-semibold text-white">▶ คลิป</span>' : '') +
         (isSel ? '<span class="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-teal-700 text-white"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"></path></svg></span>' : '') +
         '</button>';
-    }).join('') + '</div>' : '<div class="py-10 text-center text-sm text-slate-500">ไม่มีภาพในตัวกรองนี้</div>';
+    }).join('') + '</div>' + PR.pager(ppg, 'photos', 'ภาพ') : '<div class="py-10 text-center text-sm text-slate-500">ไม่มีภาพในตัวกรองนี้</div>';
 
     V.innerHTML = '<div class="flex flex-col gap-6">' +
       '<a href="#albums" class="self-start text-sm font-medium text-teal-700 hover:text-teal-800">← อัลบั้มทั้งหมด</a>' +
@@ -724,7 +738,10 @@
     loading();
     call('users').then(function (r) {
       S.users = r.users;
-      var rows = r.users.length ? r.users.map(function (u, i) {
+      var pg = PR.page(r.users, S.pg.users, PAGE.users);
+      S.pg.users = pg.page;
+      var rows = r.users.length ? pg.items.map(function (u, j) {
+        var i = pg.start + j;
         return '<div class="flex flex-wrap items-center gap-4 border-b border-slate-100 px-5 py-3.5 last:border-0">' +
           '<div class="flex min-w-[180px] flex-1 flex-col"><span class="font-semibold">' + esc(u.name) + (u.active ? '' : ' <span class="text-xs font-normal text-slate-400">(ปิดใช้งาน)</span>') + '</span>' +
           '<span class="text-[13px] text-slate-500">' + (u.line ? 'ผู้ส่งภาพจาก LINE' : 'บัญชีเว็บ') + (u.web_login ? ' · เข้าเว็บด้วย ' + esc(u.web_login) : '') + (u.last_login ? ' · เข้าล่าสุด ' + PR.timeAgo(u.last_login) : '') + '</span></div>' +
@@ -733,7 +750,7 @@
       }).join('') : '<div class="px-5 py-12 text-center text-slate-500">ยังไม่มีผู้ใช้</div>';
       V.innerHTML = '<div class="flex flex-col gap-6">' +
         heading('ผู้ใช้และสิทธิ์', 'แอดมินกดปุ่มย้าย/ซ่อนภาพในไลน์ได้ และเข้าหน้านี้ได้เมื่อมีชื่อผู้ใช้กับรหัสผ่าน', btn('+ เพิ่มแอดมิน', 'userNew', 'primary')) +
-        card(rows, 'overflow-hidden') + '</div>';
+        card(rows, 'overflow-hidden') + PR.pager(pg, 'users', 'คน') + '</div>';
     }).catch(loadError);
   }
 
@@ -922,6 +939,17 @@
   }
 
   /* ---------- จับการคลิกทั้งหน้า ---------- */
+  // เลขหน้า: เปลี่ยนหน้าโดยไม่โหลดข้อมูลใหม่ (ยกเว้นผู้ใช้)
+  PR.bindPager(V, function (page, key) {
+    S.pg[key] = page;
+    if (key === 'pending' && S.dash) { el('pend-list').innerHTML = pendingList(S.dash); el('pend-list').scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
+    quiet = true;
+    if (key === 'albums') renderAlbums();
+    else if (key === 'photos') renderAlbum();
+    else if (key === 'users') { quiet = false; viewUsers(); return; }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+
   V.addEventListener('click', function (e) {
     var t = e.target.closest('[data-act]');
     if (!t || t.tagName === 'INPUT') return;
@@ -936,7 +964,7 @@
       var da = t.hasAttribute('data-i') ? S.albums[Number(t.getAttribute('data-i'))] : S.album;
       return da && deleteAlbum(da);
     }
-    if (act === 'filter') { S.filter = t.getAttribute('data-f'); S.sel = {}; quiet = true; return renderAlbum(); }
+    if (act === 'filter') { S.filter = t.getAttribute('data-f'); S.sel = {}; S.pg.photos = 1; quiet = true; return renderAlbum(); }
     if (act === 'toggle') {
       var f = t.getAttribute('data-file');
       if (S.sel[f]) delete S.sel[f]; else S.sel[f] = true;
