@@ -170,3 +170,75 @@ textarea.pr-input { height: 88px; padding: 10px 12px; resize: vertical; }
   .lb-stage { padding: 8px; }
   .lb-prev, .lb-next { top: auto; bottom: 12px; transform: none; }
 }
+
+/* ================= กราฟสถิติ ================= */
+.pr-chart-empty { display: flex; align-items: center; justify-content: center; min-height: 160px; border-radius: 16px; background: #F8FAFC; color: #94A3B8; font-size: 14px; }
+.pr-tip { position: fixed; z-index: 2100; pointer-events: none; min-width: 120px; max-width: 240px; padding: 8px 12px; border-radius: 12px; background: #0F172A; color: #F8FAFC; font-size: 13px; line-height: 1.6; box-shadow: 0 12px 28px -10px rgba(15, 23, 42, .5); opacity: 0; transform: translateY(4px); transition: opacity .15s ease, transform .15s ease; }
+.pr-tip.on { opacity: 1; transform: none; }
+.pr-tip-head { font-weight: 600; color: #fff; }
+.pr-tip-total { color: #CBD5E1; }
+.pr-tip-row { display: flex; align-items: center; gap: 6px; color: #E2E8F0; }
+.pr-tip-row b { margin-left: auto; padding-left: 10px; font-weight: 600; color: #fff; }
+.pr-tip-row i, .pr-legend i, .pr-donut-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; flex: none; }
+
+.pr-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-bottom: 12px; font-size: 13px; color: #475569; }
+.pr-legend span { display: inline-flex; align-items: center; gap: 6px; }
+
+/* แท่งแนวตั้ง */
+.pr-bars { position: relative; margin-left: 34px; }
+.pr-bars-grid { position: absolute; left: 0; right: 0; height: 0; border-top: 1px solid #EEF2F6; }
+.pr-bars-grid span { position: absolute; right: 100%; top: -9px; padding-right: 8px; font-size: 11px; color: #94A3B8; font-variant-numeric: tabular-nums; }
+.pr-bars-cols { position: absolute; inset: 0; display: flex; align-items: flex-end; gap: 2px; }
+.pr-bar-col { position: relative; flex: 1 1 0; min-width: 0; height: 100%; display: flex; align-items: flex-end; justify-content: center; outline: none; cursor: default; }
+.pr-bar-col:hover::before, .pr-bar-col:focus-visible::before { content: ''; position: absolute; inset: 0 0 0 0; border-radius: 8px; background: rgba(15, 118, 110, .06); }
+.pr-bar { position: relative; width: min(70%, 34px); min-height: 0; display: flex; flex-direction: column-reverse; gap: 2px; border-radius: 4px 4px 0 0; transform: scaleY(0); transform-origin: bottom; transition: transform .7s cubic-bezier(.2, .9, .3, 1.05); transition-delay: calc(var(--i, 0) * 45ms); }
+.pr-bar-seg { width: 100%; flex: none; }
+.pr-bar-seg:last-child { border-radius: 4px 4px 0 0; }
+.pr-bar-val { position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); padding-bottom: 4px; font-size: 12px; font-weight: 600; color: #0F172A; white-space: nowrap; opacity: 0; transition: opacity .3s ease .6s; }
+.pr-bar-lab { position: absolute; top: 100%; left: 50%; transform: translateX(-50%); padding-top: 6px; font-size: 11px; color: #64748B; white-space: nowrap; }
+.pr-bars-wrap { padding-bottom: 26px; }
+.pr-chart.in .pr-bar { transform: scaleY(1); }
+.pr-chart.in .pr-bar-val { opacity: 1; }
+@media (max-width: 640px) { .pr-hide-sm { display: none; } .pr-bars { margin-left: 28px; } }
+
+/* วงกลม */
+.pr-donut-wrap { display: flex; flex-wrap: wrap; align-items: center; gap: 20px 28px; }
+.pr-donut { position: relative; width: 180px; height: 180px; flex: none; margin: 0 auto; }
+.pr-donut svg { width: 100%; height: 100%; overflow: visible; }
+.pr-donut-seg { stroke-dasharray: 0 var(--c); transition: stroke-dasharray .9s cubic-bezier(.2, .9, .3, 1), opacity .2s ease, stroke-width .2s ease; transition-delay: calc(var(--i, 0) * 120ms), 0s, 0s; cursor: default; }
+.pr-chart.in .pr-donut-seg { stroke-dasharray: var(--len) var(--c); }
+.pr-donut-seg.dim { opacity: .28; }
+.pr-donut-center { position: absolute; inset: 34px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; pointer-events: none; }
+.pr-donut-center b { font-family: 'Anuphan', 'Noto Sans Thai', sans-serif; font-size: 26px; line-height: 1.3; color: #0F172A; }
+.pr-donut-center span { font-size: 12px; line-height: 1.5; color: #64748B; }
+.pr-donut-legend { flex: 1 1 180px; min-width: 0; display: flex; flex-direction: column; gap: 4px; margin: 0; padding: 0; list-style: none; }
+.pr-donut-legend li { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 10px; font-size: 14px; outline: none; transition: opacity .2s ease, background .2s ease; }
+.pr-donut-legend li:hover, .pr-donut-legend li:focus-visible { background: #F1F5F9; }
+.pr-donut-legend li.dim { opacity: .45; }
+.pr-lg-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #334155; }
+.pr-lg-val { font-weight: 600; color: #0F172A; font-variant-numeric: tabular-nums; }
+.pr-lg-pct { width: 44px; text-align: right; font-size: 12px; color: #64748B; font-variant-numeric: tabular-nums; }
+
+/* อันดับแนวนอน */
+.pr-hbars { display: flex; flex-direction: column; gap: 12px; margin: 0; padding: 0; list-style: none; }
+.pr-hbars li { display: flex; align-items: center; gap: 12px; opacity: 0; transform: translateX(-8px); transition: opacity .4s ease, transform .4s ease; transition-delay: calc(var(--i, 0) * 70ms); }
+.pr-chart.in.pr-hbars li { opacity: 1; transform: none; }
+.pr-hb-rank { flex: none; width: 26px; height: 26px; border-radius: 9px; display: flex; align-items: center; justify-content: center; background: #F1F5F9; font-size: 12px; font-weight: 700; color: #475569; }
+.pr-hbars li:first-child .pr-hb-rank { background: #FEF3C7; color: #92400E; }
+.pr-hb-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px; }
+.pr-hb-top { display: flex; justify-content: space-between; gap: 10px; font-size: 14px; }
+.pr-hb-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #1E293B; }
+.pr-hb-name a { color: inherit; text-decoration: none; }
+.pr-hb-name a:hover { color: #0F766E; text-decoration: underline; }
+.pr-hb-val { flex: none; font-weight: 600; color: #0F172A; font-variant-numeric: tabular-nums; }
+.pr-hb-track { height: 8px; border-radius: 999px; background: #F1F5F9; overflow: hidden; }
+.pr-hb-fill { height: 100%; border-radius: 999px; transform: scaleX(0); transform-origin: left; transition: transform .8s cubic-bezier(.2, .9, .3, 1); transition-delay: calc(var(--i, 0) * 70ms + 120ms); }
+.pr-chart.in .pr-hb-fill { transform: scaleX(1); }
+
+/* การ์ดตัวเลขสถิติ */
+.pr-stat { position: relative; overflow: hidden; }
+.pr-stat::after { content: ''; position: absolute; right: -28px; top: -28px; width: 96px; height: 96px; border-radius: 50%; background: var(--tint, #CCFBF1); opacity: .55; }
+
+@media (prefers-reduced-motion: reduce) {
+  .pr-bar, .pr-donut-seg, .pr-hbars li, .pr-hb-fill, .pr-bar-val { transition: none !important; }
+}
