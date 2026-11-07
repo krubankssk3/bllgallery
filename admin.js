@@ -336,12 +336,15 @@
     var q = S.q.toLowerCase();
     var list = S.albums.filter(function (a) { return !q || (a.title + ' ' + a.category).toLowerCase().indexOf(q) > -1; });
     var rows = list.length ? list.map(function (a) {
-      return '<a href="#album/' + encodeURIComponent(a.id) + '" class="flex flex-wrap items-center gap-4 border-b border-slate-100 px-5 py-3.5 text-slate-900 last:border-0 hover:bg-slate-50">' +
+      var i = S.albums.indexOf(a);
+      return '<div class="flex items-center gap-2 border-b border-slate-100 pr-3 last:border-0 hover:bg-slate-50">' +
+        '<a href="#album/' + encodeURIComponent(a.id) + '" class="flex min-w-0 flex-1 flex-wrap items-center gap-4 px-5 py-3.5 text-slate-900">' +
         thumb(a.cover, 56) +
         '<div class="flex min-w-[180px] flex-1 flex-col gap-1"><span class="font-semibold">' + esc(a.title) + '</span>' +
         '<span class="flex flex-wrap items-center gap-2 text-[13px] text-slate-500">' + (a.category ? PR.catBadge(a.category, a.color) : '<span>ไม่ระบุหมวด</span>') + '<span>' + PR.num(a.count) + ' ภาพ</span><span>เข้าชม ' + PR.num(a.views) + ' ครั้ง</span><span>อัปเดต ' + PR.thaiDate(a.updated) + '</span></span></div>' +
         statusPill(a.status) +
-        '<span class="text-sm font-semibold text-teal-700">แก้ไข →</span></a>';
+        '<span class="text-sm font-semibold text-teal-700">แก้ไข →</span></a>' +
+        '<button type="button" data-act="albumDelete" data-i="' + i + '" aria-label="ลบอัลบั้ม ' + esc(a.title) + '" title="ลบอัลบั้ม" class="flex h-10 w-10 flex-none items-center justify-center rounded-xl text-slate-400 hover:bg-rose-50 hover:text-rose-600">' + TRASH + '</button></div>';
     }).join('') : '<div class="px-5 py-12 text-center text-slate-500">' + (S.albums.length ? 'ไม่พบอัลบั้มที่ตรงกับคำค้น' : 'ยังไม่มีอัลบั้ม') + '</div>';
 
     V.innerHTML = '<div class="flex flex-col gap-6">' +
@@ -389,7 +392,8 @@
       (a.folder ? '<a href="' + esc(a.folder) + '" target="_blank" rel="noopener" class="flex h-11 items-center rounded-xl border border-slate-300 bg-white px-4 text-sm font-semibold hover:bg-slate-50">โฟลเดอร์ Drive ↗</a>' : '') +
       btn('+ อัปโหลดภาพ', 'uploadPhotos', 'primary') +
       '<input id="up-files" type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple class="hidden" aria-label="เลือกภาพที่จะอัปโหลด">' +
-      (a.status === 'published' ? btn('ซ่อนอัลบั้ม', 'albumHide', 'danger') : btn('เผยแพร่อีกครั้ง', 'albumShow')) + '</div>';
+      (a.status === 'published' ? btn('ซ่อนอัลบั้ม', 'albumHide', 'danger') : btn('เผยแพร่อีกครั้ง', 'albumShow')) +
+      '<button type="button" data-act="albumDelete" class="flex h-11 items-center gap-1.5 rounded-xl border border-rose-200 bg-white px-4 text-sm font-semibold text-rose-600 hover:bg-rose-50">' + TRASH + 'ลบอัลบั้ม</button></div>';
 
     var form = card('<form id="al-form" class="grid gap-4 p-5 sm:grid-cols-2">' +
       '<div class="sm:col-span-2"><label class="pr-label" for="f-title">ชื่ออัลบั้ม</label><input id="f-title" class="pr-input" maxlength="100" value="' + esc(a.title) + '"></div>' +
@@ -460,6 +464,43 @@
     } else {
       run();
     }
+  }
+
+  var TRASH = '<svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M8 6V4h8v2"></path><path d="M19 6l-1 14H6L5 6"></path><path d="M10 11v6M14 11v6"></path></svg>';
+
+  // ลบอัลบั้มถาวร: พิมพ์ชื่ออัลบั้มยืนยัน + เลือกแจ้งเตือนกลุ่ม LINE
+  function deleteAlbum(a) {
+    PR.swal.fire({
+      icon: 'warning',
+      title: 'ลบอัลบั้มนี้ถาวร?',
+      html: '<div style="text-align:left;line-height:1.75">' +
+        '<b>“' + esc(a.title) + '”</b> · ' + PR.num(a.count) + ' ภาพ<br>' +
+        '• อัลบั้มและภาพทั้งหมดจะหายจากเว็บ ลิงก์เดิมเปิดไม่ได้อีก<br>' +
+        '• ไฟล์ย้ายไปถังขยะ Google Drive (กู้คืนได้ภายใน 30 วัน)<br>' +
+        'พิมพ์ชื่ออัลบั้มให้ตรงเพื่อยืนยัน</div>' +
+        '<label style="display:flex;align-items:center;justify-content:center;gap:8px;margin-top:14px;font-size:14px;cursor:pointer">' +
+        '<input id="del-notify" type="checkbox" checked style="width:18px;height:18px;accent-color:#0F766E"> แจ้งเตือนไปที่กลุ่ม LINE ด้วย</label>',
+      input: 'text',
+      inputPlaceholder: a.title,
+      inputAttributes: { 'aria-label': 'พิมพ์ชื่ออัลบั้มเพื่อยืนยัน', autocomplete: 'off' },
+      showCancelButton: true,
+      confirmButtonText: 'ลบอัลบั้ม',
+      cancelButtonText: 'ยกเลิก',
+      customClass: { container: 'pr-backdrop', popup: 'pr-swal', title: 'pr-swal-title', htmlContainer: 'pr-swal-text', input: 'pr-input', actions: 'pr-swal-actions', confirmButton: 'pr-btn pr-btn-danger', cancelButton: 'pr-btn pr-btn-ghost' },
+      preConfirm: function (v) {
+        var norm = function (x) { return String(x || '').replace(/\s+/g, ' ').trim(); };
+        if (norm(v) !== norm(a.title)) { window.Swal.showValidationMessage('พิมพ์ชื่ออัลบั้มให้ตรง: ' + a.title); return false; }
+        return { title: v, notify: el('del-notify').checked };
+      }
+    }).then(function (r) {
+      if (!r.isConfirmed) return;
+      busy('กำลังลบอัลบั้ม…', 'กล้องน้อยกำลังเก็บไฟล์ไปถังขยะ' + (r.value.notify ? ' แล้วแจ้งกลุ่ม LINE…' : '…'), 6);
+      call('deleteAlbum', { id: a.id, confirm_title: r.value.title, notify: r.value.notify }, 180000).then(function (res) {
+        PR.store.set('pr_home', null);
+        ok('ลบ “' + res.title + '” แล้ว' + (res.notified ? ' · แจ้ง ' + res.notified + ' กลุ่ม' : ''));
+        if (window.location.hash === '#albums') route(); else window.location.hash = '#albums';
+      }).catch(fail);
+    });
   }
 
   function setAlbumStatus(status) {
@@ -774,6 +815,10 @@
     if (act === 'newAlbum') return doNewAlbum();
     if (act === 'albumHide') return setAlbumStatus('hidden');
     if (act === 'albumShow') return setAlbumStatus('published');
+    if (act === 'albumDelete') {
+      var da = t.hasAttribute('data-i') ? S.albums[Number(t.getAttribute('data-i'))] : S.album;
+      return da && deleteAlbum(da);
+    }
     if (act === 'filter') { S.filter = t.getAttribute('data-f'); S.sel = {}; quiet = true; return renderAlbum(); }
     if (act === 'toggle') {
       var f = t.getAttribute('data-file');
