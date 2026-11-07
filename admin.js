@@ -214,15 +214,9 @@
       badge.classList.toggle('hidden', !r.stats.pending);
 
       var tiles = [['อัลบั้มบนเว็บ', r.stats.albums, ''], ['ภาพบนเว็บ', r.stats.photos, ''], ['ภาพรอจัดอัลบั้ม', r.stats.pending, r.pending.length + ' ชุดภาพ' + (r.stats.awaiting ? ' · รอยืนยัน ' + r.stats.awaiting + ' ภาพ' : '')], ['ยอดเข้าชมทั้งหมด', r.views || 0, 'กลุ่ม LINE ที่เปิดรับ ' + r.stats.groups + ' กลุ่ม']];
-      var top = (r.top || []).length ? card('<div class="border-b border-slate-200 px-5 py-4 font-display text-[17px] font-semibold">อัลบั้มที่มีคนดูมากที่สุด</div>' +
-        r.top.map(function (a, n) {
-          return '<a href="#album/' + encodeURIComponent(a.id) + '" class="flex items-center gap-4 border-b border-slate-100 px-5 py-3 text-slate-900 last:border-0 hover:bg-slate-50">' +
-            '<span class="flex h-7 w-7 flex-none items-center justify-center rounded-full ' + (n === 0 ? 'bg-amber-400 text-slate-900' : 'bg-slate-100 text-slate-600') + ' text-[13px] font-bold">' + (n + 1) + '</span>' +
-            '<span class="min-w-0 flex-1 truncate font-medium">' + esc(a.title) + '</span><span class="text-sm text-slate-500">' + PR.num(a.views) + ' ครั้ง</span></a>';
-        }).join(''), 'overflow-hidden') : '';
       var stats = '<div class="grid grid-cols-2 gap-3 sm:grid-cols-[repeat(auto-fit,minmax(170px,1fr))] sm:gap-4">' + tiles.map(function (t) {
         return card('<div class="flex flex-col gap-1 px-5 py-4"><span class="text-[13px] text-slate-500">' + t[0] + '</span>' +
-          '<span class="font-display text-[28px] font-bold">' + PR.num(t[1]) + '</span>' + (t[2] ? '<span class="text-xs text-slate-500">' + t[2] + '</span>' : '') + '</div>');
+          '<span class="font-display text-[28px] font-bold" data-count="' + Number(t[1] || 0) + '">' + PR.num(t[1]) + '</span>' + (t[2] ? '<span class="text-xs text-slate-500">' + t[2] + '</span>' : '') + '</div>');
       }).join('') + '</div>';
 
       var albumOpts = '<option value="">— เลือกอัลบั้ม —</option>' + S.albums.map(function (a) {
@@ -259,8 +253,46 @@
         stats +
         card('<div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 px-5 py-4"><span class="font-display text-[17px] font-semibold">ชุดภาพจาก LINE</span>' +
           '<span class="text-[13px] text-slate-500">ภาพที่ส่งพร้อมกัน หรือส่งติดกันภายใน 5 นาที รวมเป็น 1 ชุด</span></div>' + list, 'overflow-hidden') +
-        top + '</div>';
+        '<div id="dash-charts"></div></div>';
+      PR.chart.observe(V);
+      loadDashCharts();
     }).catch(loadError);
+  }
+
+  /* ---------- กราฟสถิติในหน้าภาพรอจัดอัลบั้ม ---------- */
+  function chartCard(title, sub, id, extra) {
+    return card('<div class="flex flex-col gap-4 p-5 sm:p-6"><div class="flex flex-wrap items-baseline justify-between gap-2">' +
+      '<span class="font-display text-[17px] font-semibold">' + title + '</span>' + (sub ? '<span class="text-[13px] text-slate-500">' + sub + '</span>' : '') +
+      '</div><div id="' + id + '"></div></div>', extra || '');
+  }
+  function loadDashCharts() {
+    var box = el('dash-charts');
+    if (!box) return;
+    PR.inlineLoader(box, 'กล้องน้อยกำลังวาดกราฟสถิติ…', 3);
+    if (box.firstChild) box.firstChild.removeAttribute('data-loading'); // ไม่ต้องรอกราฟก่อนปิดหน้าโหลดเต็มจอ
+    call('stats').then(function (d) {
+      box = el('dash-charts');
+      if (!box) return; // เปลี่ยนเมนูไปแล้ว
+      box.innerHTML = '<div class="flex flex-col gap-6">' +
+        '<div class="flex items-center gap-3 pt-2"><span class="font-display text-xl font-bold">สถิติคลังภาพ</span><span class="h-px flex-1 bg-slate-200"></span>' +
+        '<a href="stats.html" target="_blank" rel="noopener" class="text-sm font-semibold text-teal-700 hover:underline">หน้าสถิติสาธารณะ ↗</a></div>' +
+        chartCard('ภาพที่ส่งเข้ามา 14 วันล่าสุด', 'ชี้ที่แท่งเพื่อดูตัวเลข', 'ch-daily') +
+        '<div class="grid gap-6 lg:grid-cols-2">' + chartCard('สถานะภาพทั้งหมด', '', 'ch-status') + chartCard('ภาพบนเว็บตามหมวดหมู่', '', 'ch-cat') + '</div>' +
+        '<div class="grid gap-6 lg:grid-cols-2">' + chartCard('ครูที่ส่งภาพมากที่สุด', 'นับภาพที่อยู่บนเว็บ', 'ch-senders') + chartCard('อัลบั้มที่มีคนดูมากที่สุด', '', 'ch-views') + '</div>' +
+        chartCard('ภาพบนเว็บรายเดือน', '12 เดือนล่าสุด', 'ch-month') +
+        '</div>';
+      PR.chart.bars(el('ch-daily'), { title: 'ภาพที่ส่งเข้ามา 14 วันล่าสุด', labels: d.daily.labels, unit: 'ภาพ', height: 210, empty: 'ยังไม่มีภาพเข้ามาใน 14 วันนี้',
+        series: [{ name: 'บันทึกแล้ว', color: '#2A78D6', values: d.daily.saved }, { name: 'รอยืนยัน/รอจัด', color: '#EDA100', values: d.daily.waiting }] });
+      PR.chart.donut(el('ch-status'), { title: 'สถานะภาพทั้งหมด', items: d.status, center: 'ภาพทั้งหมด' });
+      PR.chart.donut(el('ch-cat'), { title: 'ภาพบนเว็บตามหมวดหมู่', items: d.categories.map(function (c) { return { label: c.label, value: c.value, color: c.color || PR.chart.slot(c.slot) }; }), center: 'ภาพบนเว็บ' });
+      PR.chart.hbars(el('ch-senders'), { title: 'ครูที่ส่งภาพมากที่สุด', items: d.senders, unit: 'ภาพ', color: '#0F766E' });
+      PR.chart.hbars(el('ch-views'), { title: 'อัลบั้มที่มีคนดูมากที่สุด', items: d.topViews.map(function (a) { return { label: a.label, value: a.value, href: '#album/' + encodeURIComponent(a.id) }; }), unit: 'ครั้ง', color: '#6250D6', empty: 'ยังไม่มียอดเข้าชม' });
+      PR.chart.bars(el('ch-month'), { title: 'ภาพบนเว็บรายเดือน', labels: d.monthly.labels, series: [{ name: 'ภาพ', color: '#0F766E', values: d.monthly.values }], unit: 'ภาพ', height: 200 });
+      PR.chart.observe(box);
+    }).catch(function (err) {
+      var b = el('dash-charts');
+      if (b && err.message !== 'auth') b.innerHTML = '<div class="rounded-2xl border border-slate-200 bg-white px-5 py-6 text-center text-sm text-slate-500">โหลดกราฟสถิติไม่สำเร็จ กดรีเฟรชเพื่อลองใหม่</div>';
+    });
   }
 
   function askNewAlbum() {
