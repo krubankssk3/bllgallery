@@ -84,6 +84,18 @@ img.fade.loaded { opacity: 1; }
 .pr-leg-b { animation: pr-step .32s ease-in-out infinite alternate-reverse; }
 .pr-arm { transform-box: fill-box; transform-origin: 100% 50%; animation: pr-swing .32s ease-in-out infinite alternate; }
 .pr-dust { position: absolute; left: -6px; bottom: 2px; width: 10px; height: 10px; border-radius: 50%; background: #CBD5E1; opacity: 0; animation: pr-dust .64s ease-out infinite; }
+/* โหลดเต็มจอ */
+.pr-loader { position: fixed; inset: 0; z-index: 2000; display: none; align-items: center; justify-content: center; padding: 20px; background: rgba(248, 250, 252, .78); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); opacity: 0; transition: opacity .3s ease; }
+.pr-loader-in { display: flex; opacity: 1; }
+.pr-loader-out { opacity: 0; }
+.pr-loader-card { width: 100%; max-width: 360px; padding: 22px 20px 18px; border-radius: 24px; background: #fff; box-shadow: 0 24px 60px -20px rgba(15, 23, 42, .35), 0 0 0 1px rgba(226, 232, 240, .9); text-align: center; animation: pr-pop-in .35s cubic-bezier(.2, 1.2, .4, 1) both; }
+.pr-loader-logo { width: 56px; height: 56px; margin: 0 auto 6px; border-radius: 16px; object-fit: contain; background: #fff; box-shadow: 0 0 0 1px #E2E8F0; padding: 3px; }
+.pr-loader-name { font-family: 'Anuphan', 'Noto Sans Thai', sans-serif; font-weight: 600; font-size: 14px; line-height: 1.6; color: #334155; margin-bottom: 2px; }
+.pr-loader .pr-run-pct { font-size: 28px; }
+/* โหลดในพื้นที่หน้า */
+.pr-inline-load { max-width: 420px; margin: 48px auto; padding: 18px 20px; border-radius: 24px; background: #fff; box-shadow: 0 0 0 1px #E2E8F0, 0 12px 30px -18px rgba(15, 23, 42, .25); text-align: center; animation: pr-fade-in .3s ease both; }
+.pr-inline-load .pr-run-pct { font-size: 26px; }
+@keyframes pr-fade-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 .pr-run-done .pr-run-fill { animation: none; background-image: none; }
 .pr-run-done .pr-mascot { animation: pr-jump .55s cubic-bezier(.3, 1.6, .5, 1) 2; }
 .pr-run-done .pr-leg, .pr-run-done .pr-dust { animation: none; opacity: 0; }
