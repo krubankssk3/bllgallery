@@ -14,7 +14,7 @@
   tailwind.config = { theme: { extend: { fontFamily: { sans: ['"Noto Sans Thai"', 'system-ui', 'sans-serif'], display: ['Anuphan', '"Noto Sans Thai"', 'sans-serif'] } } } };
 </script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
-<link rel="stylesheet" href="styles.css?v=10">
+<link rel="stylesheet" href="styles.css?v=11">
 </head>
 <body class="bg-slate-50 text-slate-900 antialiased">
 
@@ -52,7 +52,8 @@
   <div id="days" role="group" aria-label="กรองภาพตามวัน" class="no-scrollbar hidden max-w-full gap-1.5 self-start overflow-x-auto rounded-[14px] bg-slate-100 p-1"></div>
 
   <section aria-label="ภาพในอัลบั้ม">
-    <div id="grid" class="grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] gap-3 sm:grid-cols-[repeat(auto-fill,minmax(220px,1fr))] sm:gap-3.5"></div>
+    <div id="grid" class="grid scroll-mt-28 grid-cols-[repeat(auto-fill,minmax(160px,1fr))] gap-3 sm:grid-cols-[repeat(auto-fill,minmax(220px,1fr))] sm:gap-3.5"></div>
+    <div id="pager" class="mt-8"></div>
   </section>
 </main>
 
@@ -88,12 +89,13 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script src="config.js?v=10"></script>
-<script src="common.js?v=10"></script>
+<script src="config.js?v=11"></script>
+<script src="common.js?v=11"></script>
 <script>
 (function () {
   var id = PR.param('id');
-  var state = { album: null, photos: [], day: '', view: [], index: 0 };
+  var state = { album: null, photos: [], day: '', view: [], index: 0, page: 1 };
+  var SIZE = 24; // ภาพต่อหน้า
   function el(x) { return document.getElementById(x); }
 
   var ICON = {
@@ -237,17 +239,22 @@
     state.view = state.photos.filter(function (p) { return !state.day || PR.dayKey(p.at) === state.day; });
     if (!state.view.length) {
       el('grid').innerHTML = '<div class="col-span-full rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-14 text-center text-slate-500">ยังไม่มีภาพในอัลบั้มนี้</div>';
+      el('pager').innerHTML = '';
       return;
     }
-    el('grid').innerHTML = state.view.map(function (p, i) {
+    var pg = PR.page(state.view, state.page, SIZE);
+    state.page = pg.page;
+    el('grid').innerHTML = pg.items.map(function (p, j) {
+      var i = pg.start + j; // ลำดับจริงในรายการ (ใช้กับ lightbox ที่เลื่อนดูได้ทุกภาพ)
       var t = PR.tone(i * 5);
       var fresh = PR.isRecent(p.at, 24) ? '<span class="absolute left-2.5 top-2.5 rounded-full bg-white px-2 py-0.5 text-xs font-semibold text-teal-800 shadow-sm">ใหม่</span>' : '';
-      return '<button type="button" data-i="' + i + '" aria-label="เปิดดู' + (p.type === 'video' ? 'คลิป' : 'ภาพ') + 'ที่ ' + (i + 1) + '" style="--d:' + Math.min(i, 11) * 45 + 'ms" class="reveal ph relative flex aspect-[4/3] items-center justify-center overflow-hidden rounded-2xl" style="background:' + t[0] + ';cursor:zoom-in">' +
+      return '<button type="button" data-i="' + i + '" aria-label="เปิดดู' + (p.type === 'video' ? 'คลิป' : 'ภาพ') + 'ที่ ' + (i + 1) + '" style="--d:' + Math.min(j, 11) * 45 + 'ms" class="reveal ph relative flex aspect-[4/3] items-center justify-center overflow-hidden rounded-2xl" style="background:' + t[0] + ';cursor:zoom-in">' +
         PR.photoIcon(t[1], 40) +
         '<img src="' + PR.thumb(p.id, 480) + '" alt="" loading="lazy" referrerpolicy="no-referrer" class="fade absolute inset-0 h-full w-full object-cover" onload="this.classList.add(\'loaded\')" onerror="this.style.display=\'none\'">' +
         (p.type === 'video' ? '<span class="absolute inset-0 flex items-center justify-center"><span class="flex h-12 w-12 items-center justify-center rounded-full bg-slate-900/70 text-white backdrop-blur"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13l11-6.5z"></path></svg></span></span>' : '') +
         fresh + '</button>';
     }).join('');
+    el('pager').innerHTML = PR.pager(pg, 'photos', 'ภาพ');
     PR.reveal(el('grid'));
   }
 
@@ -305,8 +312,14 @@
     var b = e.target.closest('button[data-day]');
     if (!b) return;
     state.day = b.getAttribute('data-day');
+    state.page = 1;
     renderDays();
     renderGrid();
+  });
+  PR.bindPager(el('pager'), function (page) {
+    state.page = page;
+    renderGrid();
+    el('grid').scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
   el('lb-close').onclick = closeLb;
   el('lb-dl').addEventListener('click', function (e) {
