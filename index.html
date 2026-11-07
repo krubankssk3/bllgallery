@@ -16,7 +16,7 @@
   tailwind.config = { theme: { extend: { fontFamily: { sans: ['"Noto Sans Thai"', 'system-ui', 'sans-serif'], display: ['Anuphan', '"Noto Sans Thai"', 'sans-serif'] } } } };
 </script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
-<link rel="stylesheet" href="styles.css?v=9">
+<link rel="stylesheet" href="styles.css?v=10">
 </head>
 <body class="bg-slate-50 text-slate-900 antialiased">
 
@@ -39,6 +39,7 @@
     <nav aria-label="เมนูหลัก" class="flex flex-wrap items-center gap-1">
       <a href="index.html" class="rounded-[10px] bg-teal-50 px-3.5 py-2.5 text-[15px] font-semibold text-teal-800">อัลบั้มทั้งหมด</a>
       <a href="calendar.html" class="rounded-[10px] px-3.5 py-2.5 text-[15px] text-slate-700 hover:bg-slate-100">ปฏิทินกิจกรรม</a>
+      <a href="stats.html" class="rounded-[10px] px-3.5 py-2.5 text-[15px] text-slate-700 hover:bg-slate-100">สถิติ</a>
       <a href="admin.html" class="ml-2 rounded-[10px] bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800">สำหรับครู</a>
     </nav>
   </div>
@@ -111,8 +112,8 @@
 </footer>
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script src="config.js?v=9"></script>
-<script src="common.js?v=9"></script>
+<script src="config.js?v=10"></script>
+<script src="common.js?v=10"></script>
 <script>
 (function () {
   var state = { data: null, cat: '', year: '', q: '', shown: PR.config.PAGE_SIZE || 12 };
