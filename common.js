@@ -460,6 +460,50 @@
     }, 400);
   };
 
+  /* ---------- แบ่งหน้า ---------- */
+  // PR.page(list, page, size) → { items, page, pages, start }  (ปรับเลขหน้าให้อยู่ในช่วงเสมอ)
+  PR.page = function (list, page, size) {
+    var pages = Math.max(1, Math.ceil(list.length / size));
+    page = Math.min(Math.max(1, Number(page) || 1), pages);
+    var start = (page - 1) * size;
+    return { items: list.slice(start, start + size), page: page, pages: pages, start: start, total: list.length, size: size };
+  };
+  // PR.pager(pg, key, unit) → HTML ปุ่มเลขหน้า ([data-page] + [data-pager=key]) ว่างถ้ามีหน้าเดียว
+  PR.pager = function (pg, key, unit) {
+    if (!pg || pg.pages <= 1) return '';
+    var p = pg.page, n = pg.pages, nums = [], i;
+    var want = [1, n, p - 1, p, p + 1];
+    if (p <= 3) want.push(2, 3, 4);
+    if (p >= n - 2) want.push(n - 1, n - 2, n - 3);
+    for (i = 1; i <= n; i++) if (want.indexOf(i) > -1) nums.push(i);
+    var attr = ' data-pager="' + PR.esc(key || '') + '"';
+    var b = function (page, label, cls, aria, disabled) {
+      return '<button type="button" class="pr-pg-btn ' + (cls || '') + '" data-page="' + page + '"' + attr +
+        (aria ? ' aria-label="' + aria + '"' : '') + (disabled ? ' disabled' : '') + (cls === 'on' ? ' aria-current="page"' : '') + '>' + label + '</button>';
+    };
+    var html = b(p - 1, '<span aria-hidden="true">‹</span><span class="pr-pg-word">ก่อนหน้า</span>', 'pr-pg-nav', 'หน้าก่อนหน้า', p === 1);
+    var prev = 0;
+    nums.forEach(function (k) {
+      if (k - prev > 1) html += '<span class="pr-pg-gap" aria-hidden="true">…</span>';
+      html += b(k, String(k), k === p ? 'on' : '', 'หน้า ' + k);
+      prev = k;
+    });
+    html += b(p + 1, '<span class="pr-pg-word">ถัดไป</span><span aria-hidden="true">›</span>', 'pr-pg-nav', 'หน้าถัดไป', p === n);
+    var from = pg.start + 1, to = Math.min(pg.start + pg.size, pg.total);
+    return '<nav class="pr-pager" aria-label="เลือกหน้า"><div class="pr-pg-btns">' + html + '</div>' +
+      '<div class="pr-pg-info">แสดง ' + PR.num(from) + '–' + PR.num(to) + ' จาก ' + PR.num(pg.total) + ' ' + PR.esc(unit || 'รายการ') + '</div></nav>';
+  };
+  // ผูกคลิกเลขหน้าใน root: onPage(page, key)
+  PR.bindPager = function (root, onPage) {
+    if (!root || root._pgBound) return;
+    root._pgBound = true;
+    root.addEventListener('click', function (e) {
+      var t = e.target.closest ? e.target.closest('[data-page]') : null;
+      if (!t || t.disabled || !root.contains(t)) return;
+      onPage(Number(t.getAttribute('data-page')), t.getAttribute('data-pager') || '');
+    });
+  };
+
   /* ---------- กราฟสถิติ (HTML/SVG ล้วน ไม่ใช้ไลบรารี) ---------- */
   // PR.chart.bars(el, { labels, series:[{name,color,values}], unit })  กราฟแท่ง (ซ้อนได้)
   // PR.chart.donut(el, { items:[{label,value,color}], center, unit })   กราฟวงกลม
