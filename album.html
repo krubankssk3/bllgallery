@@ -14,7 +14,7 @@
   tailwind.config = { theme: { extend: { fontFamily: { sans: ['"Noto Sans Thai"', 'system-ui', 'sans-serif'], display: ['Anuphan', '"Noto Sans Thai"', 'sans-serif'] } } } };
 </script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
-<link rel="stylesheet" href="styles.css?v=11">
+<link rel="stylesheet" href="styles.css?v=12">
 </head>
 <body class="bg-slate-50 text-slate-900 antialiased">
 
@@ -56,6 +56,7 @@
     <div id="pager" class="mt-8"></div>
   </section>
 </main>
+<div id="selbar" class="selbar" role="region" aria-label="ภาพที่เลือกดาวน์โหลด"></div>
 
 <footer class="border-t border-slate-200 bg-white">
   <div class="mx-auto max-w-6xl px-6 py-6 text-[13px] text-slate-500" data-site="footer">พัฒนาโดย นายชิติพัทธ์ นิลวรรณ ตำแหน่ง ครู โรงเรียนบ้านละลม สพป.ศรีสะเกษ เขต 3</div>
@@ -89,18 +90,19 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script src="config.js?v=11"></script>
-<script src="common.js?v=11"></script>
+<script src="config.js?v=12"></script>
+<script src="common.js?v=12"></script>
 <script>
 (function () {
   var id = PR.param('id');
-  var state = { album: null, photos: [], day: '', view: [], index: 0, page: 1 };
+  var state = { album: null, photos: [], day: '', view: [], index: 0, page: 1, selMode: false, sel: {} };
   var SIZE = 24; // ภาพต่อหน้า
   function el(x) { return document.getElementById(x); }
 
   var ICON = {
     download: '<svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11"></path><path d="M7 10l5 5 5-5"></path><path d="M5 20h14"></path></svg>',
     share: '<svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="2.5"></circle><circle cx="6" cy="12" r="2.5"></circle><circle cx="18" cy="19" r="2.5"></circle><path d="M8.2 10.8l7.6-4.4M8.2 13.2l7.6 4.4"></path></svg>',
+    check: '<svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="4"></rect><path d="M8 12.5l3 3 5-6"></path></svg>',
     qr: '<svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"></rect><rect x="14" y="3" width="7" height="7" rx="1"></rect><rect x="3" y="14" width="7" height="7" rx="1"></rect><path d="M14 14h3v3h-3zM20 14v.01M14 20h.01M17 20h4v-3"></path></svg>'
   };
   var AVATAR = ['#0F766E', '#F59E0B', '#0EA5E9', '#8B5CF6', '#E11D48'];
@@ -129,6 +131,7 @@
       '</div>' +
       '<div class="flex flex-wrap gap-2.5">' +
         '<button id="btn-dl" type="button" class="flex h-12 items-center gap-2 rounded-xl bg-teal-700 px-5 text-[15px] font-semibold text-white shadow-md shadow-teal-700/30 hover:bg-teal-800">' + ICON.download + 'ดาวน์โหลดทั้งอัลบั้ม</button>' +
+        '<button id="btn-sel" type="button" aria-pressed="false" class="flex h-12 items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 text-[15px] font-medium hover:bg-slate-50">' + ICON.check + 'เลือกภาพดาวน์โหลด</button>' +
         '<button id="btn-share" type="button" class="flex h-12 items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 text-[15px] hover:bg-slate-50">' + ICON.share + 'แชร์</button>' +
         '<button id="btn-qr" type="button" aria-label="แสดง QR Code" class="flex h-12 w-12 items-center justify-center rounded-xl border border-slate-300 bg-white hover:bg-slate-50">' + ICON.qr + '</button>' +
       '</div>';
@@ -136,6 +139,7 @@
     var url = PR.albumUrl(a.id);
     el('btn-share').onclick = function () { PR.share(a.title, url); };
     el('btn-qr').onclick = function () { PR.qr(a.title, url); };
+    el('btn-sel').onclick = function () { setSelMode(!state.selMode); };
     el('btn-dl').onclick = function () {
       var images = state.photos.filter(function (p) { return p.type !== 'video'; }).length;
       var videos = state.photos.length - images;
@@ -188,6 +192,101 @@
       PR.swal.fire({ icon: 'error', title: 'ดาวน์โหลดไม่สำเร็จ', text: err.message === 'timeout' ? 'เตรียมไฟล์นานเกินไป ลองกดใหม่อีกครั้ง' : err.message });
     });
   }
+
+  /* ---------- เลือกภาพเพื่อดาวน์โหลด ---------- */
+  var SEL_MAX = 100;
+  function selCount() { return Object.keys(state.sel).length; }
+  function setSelMode(on) {
+    state.selMode = on;
+    if (!on) state.sel = {};
+    document.body.style.paddingBottom = on ? '96px' : ''; // ไม่ให้แถบลอยบังเลขหน้า
+    var b = el('btn-sel');
+    if (b) {
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
+      b.className = 'flex h-12 items-center gap-2 rounded-xl border px-4 text-[15px] font-medium ' + (on ? 'border-teal-600 bg-teal-50 text-teal-800' : 'border-slate-300 bg-white hover:bg-slate-50');
+    }
+    renderGrid();
+    renderSelBar();
+    if (on) PR.toast.fire({ icon: 'info', title: 'แตะภาพที่ต้องการ แล้วกดดาวน์โหลดด้านล่าง' });
+  }
+  function toggleSel(p) {
+    if (!p || p.type === 'video') return;
+    if (state.sel[p.id]) delete state.sel[p.id];
+    else {
+      if (selCount() >= SEL_MAX) { PR.toast.fire({ icon: 'warning', title: 'เลือกได้สูงสุด ' + SEL_MAX + ' ภาพต่อครั้ง' }); return; }
+      state.sel[p.id] = 1;
+    }
+    renderGrid();
+    renderSelBar();
+  }
+  function selectAllView() {
+    var added = 0;
+    state.view.forEach(function (p) {
+      if (p.type === 'video' || state.sel[p.id] || selCount() >= SEL_MAX) return;
+      state.sel[p.id] = 1; added++;
+    });
+    if (selCount() >= SEL_MAX) PR.toast.fire({ icon: 'info', title: 'เลือกได้สูงสุด ' + SEL_MAX + ' ภาพต่อครั้ง' });
+    renderGrid();
+    renderSelBar();
+  }
+  function renderSelBar() {
+    var bar = el('selbar');
+    if (!state.selMode) { bar.className = 'selbar'; bar.innerHTML = ''; return; }
+    var n = selCount();
+    bar.innerHTML = '<div class="mx-auto flex max-w-3xl flex-wrap items-center justify-between gap-3 rounded-2xl bg-slate-900 px-4 py-3 text-white shadow-2xl shadow-slate-900/40 sm:px-5">' +
+      '<div class="flex items-center gap-2 text-[15px]"><span class="flex h-8 min-w-[32px] items-center justify-center rounded-full bg-teal-500 px-2 font-bold" aria-live="polite">' + n + '</span>ภาพที่เลือก</div>' +
+      '<div class="flex flex-wrap items-center gap-2">' +
+        '<button type="button" data-sel="all" class="h-10 rounded-xl px-3 text-sm text-slate-200 hover:bg-white/10">เลือกทั้งหมด</button>' +
+        (n ? '<button type="button" data-sel="clear" class="h-10 rounded-xl px-3 text-sm text-slate-200 hover:bg-white/10">ล้าง</button>' : '') +
+        '<button type="button" data-sel="cancel" class="h-10 rounded-xl px-3 text-sm text-slate-200 hover:bg-white/10">ยกเลิก</button>' +
+        '<button type="button" data-sel="go"' + (n ? '' : ' disabled') + ' class="flex h-10 items-center gap-2 rounded-xl bg-teal-500 px-4 text-sm font-semibold text-white hover:bg-teal-400 disabled:cursor-not-allowed disabled:opacity-40">' + ICON.download + 'ดาวน์โหลด' + (n ? ' (' + n + ')' : '') + '</button>' +
+      '</div></div>';
+    bar.className = 'selbar on';
+  }
+  function downloadSelected() {
+    var ids = Object.keys(state.sel);
+    if (!ids.length) return;
+    if (ids.length === 1) return downloadOne(PR.downloadUrl(ids[0]), false);
+    var run = PR.runner.open({ title: 'กำลังเตรียม ' + ids.length + ' ภาพที่เลือก', text: 'กล้องน้อยกำลังวิ่งไปเก็บภาพ…' });
+    var finish = PR.runner.estimate(run, Math.max(4, ids.length * 0.25), [
+      [0, 'กล้องน้อยกำลังวิ่งไปเก็บภาพ…'],
+      [40, 'กำลังบีบอัดเป็นไฟล์ .zip…'],
+      [80, 'ใกล้ถึงเส้นชัยแล้ว…']
+    ]);
+    PR.postPublic({ action: 'zipSelected', id: state.album.id, file_ids: ids }, 300000).then(function (r) {
+      finish();
+      if (!r || !r.ok) throw new Error((r && r.message) || 'เตรียมไฟล์ไม่สำเร็จ');
+      run.done('ถึงเส้นชัยแล้ว! ' + r.count + ' ภาพพร้อมดาวน์โหลด');
+      setTimeout(function () {
+        if (r.parts.length === 1) {
+          run.close();
+          PR.toast.fire({ icon: 'success', title: 'เริ่มดาวน์โหลดแล้ว', text: r.parts[0].name + ' · ' + fmtSize(r.parts[0].size) });
+          window.location.href = r.parts[0].url;
+        } else {
+          PR.swal.fire({
+            icon: 'success', title: 'ไฟล์พร้อมแล้ว ' + r.parts.length + ' ส่วน',
+            html: '<div class="pr-zip-list">' + r.parts.map(function (z) {
+              return '<a href="' + PR.esc(z.url) + '" target="_blank" rel="noopener"><span>' + PR.esc(z.name) + '</span><small>' + fmtSize(z.size) + '</small></a>';
+            }).join('') + '</div>',
+            confirmButtonText: 'ปิด'
+          });
+        }
+        setSelMode(false);
+      }, 1200);
+    }).catch(function (err) {
+      finish();
+      PR.swal.fire({ icon: 'error', title: 'ดาวน์โหลดไม่สำเร็จ', text: err.message === 'timeout' ? 'เตรียมไฟล์นานเกินไป ลองเลือกน้อยลงแล้วกดใหม่' : err.message });
+    });
+  }
+  el('selbar').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-sel]');
+    if (!b || b.disabled) return;
+    var a = b.getAttribute('data-sel');
+    if (a === 'all') selectAllView();
+    else if (a === 'clear') { state.sel = {}; renderGrid(); renderSelBar(); }
+    else if (a === 'cancel') setSelMode(false);
+    else if (a === 'go') downloadSelected();
+  });
 
   // ดาวน์โหลดทีละภาพ/คลิป: วิ่งสั้นๆ ให้รู้ว่ากดแล้ว จากนั้นเริ่มดาวน์โหลด
   function downloadOne(url, isVideo) {
@@ -248,11 +347,22 @@
       var i = pg.start + j; // ลำดับจริงในรายการ (ใช้กับ lightbox ที่เลื่อนดูได้ทุกภาพ)
       var t = PR.tone(i * 5);
       var fresh = PR.isRecent(p.at, 24) ? '<span class="absolute left-2.5 top-2.5 rounded-full bg-white px-2 py-0.5 text-xs font-semibold text-teal-800 shadow-sm">ใหม่</span>' : '';
-      return '<button type="button" data-i="' + i + '" aria-label="เปิดดู' + (p.type === 'video' ? 'คลิป' : 'ภาพ') + 'ที่ ' + (i + 1) + '" style="--d:' + Math.min(j, 11) * 45 + 'ms" class="reveal ph relative flex aspect-[4/3] items-center justify-center overflow-hidden rounded-2xl" style="background:' + t[0] + ';cursor:zoom-in">' +
+      var isVid = p.type === 'video';
+      var on = !!state.sel[p.id];
+      var label = state.selMode
+        ? (isVid ? 'คลิปเลือกดาวน์โหลดรวมไม่ได้' : (on ? 'ยกเลิกเลือก' : 'เลือก') + 'ภาพที่ ' + (i + 1))
+        : 'เปิดดู' + (isVid ? 'คลิป' : 'ภาพ') + 'ที่ ' + (i + 1);
+      var mark = state.selMode
+        ? (isVid ? '<span class="absolute inset-0 bg-white/60"></span>'
+          : '<span class="sel-mark absolute right-2.5 top-2.5 z-10 flex h-7 w-7 items-center justify-center rounded-full border-2 ' + (on ? 'border-teal-600 bg-teal-600 text-white' : 'border-white bg-slate-900/30 text-transparent') + ' shadow"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7"></path></svg></span>')
+        : '';
+      return '<button type="button" data-i="' + i + '" aria-label="' + label + '"' + (state.selMode && !isVid ? ' aria-pressed="' + on + '"' : '') + (state.selMode && isVid ? ' disabled' : '') +
+        ' style="--d:' + Math.min(j, 11) * 45 + 'ms;background:' + t[0] + ';cursor:' + (state.selMode ? (isVid ? 'not-allowed' : 'pointer') : 'zoom-in') + '"' +
+        ' class="reveal ph relative flex aspect-[4/3] items-center justify-center overflow-hidden rounded-2xl' + (on ? ' ring-4 ring-teal-500 ring-offset-2' : '') + '">' +
         PR.photoIcon(t[1], 40) +
         '<img src="' + PR.thumb(p.id, 480) + '" alt="" loading="lazy" referrerpolicy="no-referrer" class="fade absolute inset-0 h-full w-full object-cover" onload="this.classList.add(\'loaded\')" onerror="this.style.display=\'none\'">' +
         (p.type === 'video' ? '<span class="absolute inset-0 flex items-center justify-center"><span class="flex h-12 w-12 items-center justify-center rounded-full bg-slate-900/70 text-white backdrop-blur"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13l11-6.5z"></path></svg></span></span>' : '') +
-        fresh + '</button>';
+        fresh + mark + '</button>';
     }).join('');
     el('pager').innerHTML = PR.pager(pg, 'photos', 'ภาพ');
     PR.reveal(el('grid'));
@@ -306,7 +416,9 @@
 
   el('grid').addEventListener('click', function (e) {
     var b = e.target.closest('button[data-i]');
-    if (b) openLb(Number(b.getAttribute('data-i')));
+    if (!b) return;
+    if (state.selMode) return toggleSel(state.view[Number(b.getAttribute('data-i'))]);
+    openLb(Number(b.getAttribute('data-i')));
   });
   el('days').addEventListener('click', function (e) {
     var b = e.target.closest('button[data-day]');
