@@ -254,3 +254,10 @@ textarea.pr-input { height: 88px; padding: 10px 12px; resize: vertical; }
 .pr-pg-gap { padding: 0 2px; color: #94A3B8; }
 .pr-pg-info { font-size: 13px; color: #64748B; }
 @media (max-width: 480px) { .pr-pg-word { display: none; } .pr-pg-btn { min-width: 38px; height: 38px; padding: 0 10px; } }
+
+/* แถบภาพที่เลือกดาวน์โหลด (ลอยด้านล่าง) */
+.selbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 60; padding: 0 12px 14px; transform: translateY(120%); transition: transform .3s cubic-bezier(.2, .9, .3, 1); pointer-events: none; }
+.selbar.on { transform: none; pointer-events: auto; }
+.sel-mark { transition: background .15s ease, border-color .15s ease, transform .15s ease; }
+button[aria-pressed="true"] .sel-mark { transform: scale(1.08); }
+@media (prefers-reduced-motion: reduce) { .selbar { transition: none; } }
